@@ -65,22 +65,30 @@ export default function FlightControlPage() {
           <h1 className="text-xl font-bold">Управление полётом</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Стабилизация · Манёвры · Адаптация под БПЛА</p>
         </div>
-        <div className="flex items-center gap-2">
-          {drones.map(d => (
-            <button
-              key={d.id}
-              onClick={() => setSelDrone(d.id)}
-              className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 ${selDrone === d.id ? "btn-electric" : "panel"}`}
-            >
-              <span className="dot-online" />
-              {d.name}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 flex-wrap">
+          {loading && drones.length === 0
+            ? <span className="hud-label animate-pulse">загрузка…</span>
+            : (flyingDrones.length > 0 ? flyingDrones : drones).map(d => (
+                <button
+                  key={d.id}
+                  onClick={() => setSelDroneId(d.id)}
+                  className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 ${selDrone === d.id ? "btn-electric" : "panel"}`}
+                >
+                  <span className={d.status === "flight" ? "dot-online" : "dot-offline"} />
+                  {d.name}
+                </button>
+              ))
+          }
         </div>
       </div>
 
+      {!drone && (
+        <div className="panel p-6 rounded-xl text-center text-muted-foreground text-sm animate-pulse">
+          Загрузка данных дрона…
+        </div>
+      )}
       {/* Main HUD */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      {drone && <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
         {/* Attitude indicator */}
         <div className="panel rounded-xl p-5">
@@ -182,10 +190,10 @@ export default function FlightControlPage() {
           </div>
           <div className="text-xs text-muted-foreground">ИИ адаптирует ПИД-регуляторы под профиль БПЛА автоматически</div>
         </div>
-      </div>
+      </div>}
 
       {/* Maneuvers */}
-      <div className="panel rounded-xl p-5">
+      {drone && <div className="panel rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-sm">Манёвры и режимы</h2>
           <span className="tag tag-electric">Автономный режим</span>
@@ -224,7 +232,7 @@ export default function FlightControlPage() {
             <p className="text-xs text-muted-foreground">Маршрут RTB построен с учётом остатка заряда {drone.battery}%. Расчётное время прибытия: 8 мин.</p>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Emergency & Failure modes */}
       <div className="panel-danger rounded-xl p-5">
