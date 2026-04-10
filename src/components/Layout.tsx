@@ -10,8 +10,12 @@ interface LayoutProps {
 const navItems = [
   { id: "dashboard", label: "Командный центр", icon: "LayoutDashboard" },
   { id: "missions", label: "Миссии", icon: "Target" },
+  { id: "flightcontrol", label: "Управление полётом", icon: "Navigation" },
   { id: "ai", label: "ИИ-ядро", icon: "Brain" },
+  { id: "swarm", label: "Рой БПЛА", icon: "Network" },
+  { id: "monitoring", label: "Мониторинг", icon: "Activity" },
   { id: "flightlog", label: "История полётов", icon: "History" },
+  { id: "security", label: "Безопасность", icon: "Shield" },
   { id: "api", label: "API", icon: "Code2" },
   { id: "integrations", label: "Подключения", icon: "Plug" },
   { id: "support", label: "Поддержка", icon: "Headphones" },
