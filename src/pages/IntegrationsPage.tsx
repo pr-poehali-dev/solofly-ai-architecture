@@ -1,142 +1,111 @@
-import { useState } from "react";
 import Icon from "@/components/ui/icon";
 
 const integrations = [
-  { id: "slack", name: "Slack", desc: "Уведомления и алерты в Slack-каналы", category: "Коммуникации", connected: true, icon: "MessageSquare", color: "#4ade80" },
-  { id: "notion", name: "Notion", desc: "Синхронизация данных с базами Notion", category: "Продуктивность", connected: true, icon: "BookOpen", color: "var(--neon-cyan)" },
-  { id: "hubspot", name: "HubSpot", desc: "Передача лидов и сделок в CRM", category: "CRM", connected: false, icon: "Target", color: "#fb923c" },
-  { id: "salesforce", name: "Salesforce", desc: "Двусторонняя синхронизация CRM", category: "CRM", connected: false, icon: "Cloud", color: "#60a5fa" },
-  { id: "zapier", name: "Zapier", desc: "Автоматизация 5000+ приложений", category: "Автоматизация", connected: true, icon: "Zap", color: "#facc15" },
-  { id: "telegram", name: "Telegram Bot", desc: "Уведомления через Telegram-бота", category: "Коммуникации", connected: false, icon: "Send", color: "var(--neon-cyan)" },
-  { id: "google", name: "Google Sheets", desc: "Авто-экспорт данных в таблицы", category: "Экспорт", connected: false, icon: "Table", color: "#4ade80" },
-  { id: "webhook", name: "Custom Webhook", desc: "Подключить любой REST API", category: "Разработка", connected: false, icon: "Webhook", color: "var(--neon-purple)" },
+  { name: "MAVLink", desc: "Стандартный протокол управления БПЛА", icon: "Radio", color: "var(--electric)", connected: true, category: "Протоколы" },
+  { name: "ROS 2", desc: "Robot Operating System для автономных систем", icon: "Cpu", color: "var(--signal-green)", connected: true, category: "Протоколы" },
+  { name: "OpenCV", desc: "Библиотека компьютерного зрения", icon: "Eye", color: "var(--electric)", connected: true, category: "ИИ/ML" },
+  { name: "TensorFlow Lite", desc: "ИИ-инференс на бортовом процессоре", icon: "Brain", color: "var(--signal-green)", connected: true, category: "ИИ/ML" },
+  { name: "Grafana", desc: "Визуализация телеметрии в реальном времени", icon: "BarChart3", color: "var(--warning)", connected: false, category: "Мониторинг" },
+  { name: "Prometheus", desc: "Сбор и хранение метрик системы", icon: "Activity", color: "var(--warning)", connected: false, category: "Мониторинг" },
+  { name: "Telegram Bot", desc: "Алерты о статусе миссий в Telegram", icon: "Send", color: "var(--electric)", connected: false, category: "Уведомления" },
+  { name: "AWS S3", desc: "Облачное хранилище видео и телеметрии", icon: "Cloud", color: "var(--signal-green)", connected: false, category: "Хранилище" },
 ];
 
+const CATEGORIES = ["Протоколы", "ИИ/ML", "Мониторинг", "Уведомления", "Хранилище"];
+
 export default function IntegrationsPage() {
-  const [filter, setFilter] = useState("Все");
-  const [search, setSearch] = useState("");
-
-  const categories = ["Все", "Коммуникации", "CRM", "Продуктивность", "Автоматизация", "Экспорт", "Разработка"];
-
-  const filtered = integrations.filter((i) => {
-    const matchCat = filter === "Все" || i.category === filter;
-    const matchSearch = i.name.toLowerCase().includes(search.toLowerCase()) || i.desc.toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchSearch;
-  });
-
-  const connectedCount = integrations.filter(i => i.connected).length;
+  const connected = integrations.filter(i => i.connected).length;
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between mb-2">
+    <div className="p-6 space-y-5 fade-up">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black">Интеграции</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Подключено: <span className="text-green-400 font-semibold">{connectedCount}</span> из {integrations.length}</p>
+          <h1 className="text-xl font-bold">Внешние подключения</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            Активных: <span style={{ color: "var(--signal-green)" }}>{connected}</span> из {integrations.length}
+          </p>
         </div>
-        <button className="gradient-btn px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2">
-          <Icon name="Plus" size={14} />
-          Добавить своё
+        <button className="btn-electric px-4 py-2 rounded-lg text-xs flex items-center gap-2">
+          <Icon name="Plus" size={13} />
+          Добавить
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Подключено", val: connectedCount, color: "var(--neon-green)" },
-          { label: "События сегодня", val: "12 438", color: "var(--neon-purple)" },
-          { label: "Ошибок", val: "0", color: "var(--neon-cyan)" },
+          { label: "Подключено", val: connected, color: "var(--signal-green)" },
+          { label: "Сообщений/сек", val: "1 240", color: "var(--electric)" },
+          { label: "Ошибок за сутки", val: "0", color: "var(--signal-green)" },
         ].map((s) => (
-          <div key={s.label} className="stat-card text-center">
-            <div className="text-3xl font-black mb-1" style={{ color: s.color }}>{s.val}</div>
-            <div className="text-sm text-muted-foreground">{s.label}</div>
+          <div key={s.label} className="panel p-5 rounded-xl text-center">
+            <div className="hud-value text-2xl mb-0.5" style={{ color: s.color }}>{s.val}</div>
+            <div className="hud-label">{s.label}</div>
           </div>
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2 glass-card rounded-xl px-3 py-2">
-          <Icon name="Search" size={14} className="text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Поиск интеграций..."
-            className="bg-transparent text-sm outline-none w-44 placeholder:text-muted-foreground"
-          />
-        </div>
-        <div className="flex gap-1.5 flex-wrap">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setFilter(cat)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filter === cat ? "gradient-btn" : "glass-card hover:bg-white/8"}`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {filtered.map((item) => (
-          <div
-            key={item.id}
-            className={`glass-card rounded-2xl p-5 flex flex-col border transition-all hover:bg-white/5 ${item.connected ? "border-green-500/25" : "border-border"}`}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${item.color}20` }}>
-                <Icon name={item.icon} fallback="Plug" size={20} style={{ color: item.color }} />
-              </div>
-              {item.connected && (
-                <span className="badge-pill bg-green-500/15 text-green-400">● Активно</span>
-              )}
-            </div>
-            <div className="font-bold text-sm mb-1">{item.name}</div>
-            <div className="text-xs text-muted-foreground flex-1 leading-relaxed mb-4">{item.desc}</div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">{item.category}</span>
-              <button
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${item.connected ? "bg-white/10 text-muted-foreground hover:bg-red-500/15 hover:text-red-400" : "gradient-btn"}`}
-              >
-                {item.connected ? "Отключить" : "Подключить"}
-              </button>
+      {CATEGORIES.map(cat => {
+        const items = integrations.filter(i => i.category === cat);
+        return (
+          <div key={cat}>
+            <div className="hud-label mb-3">{cat}</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {items.map(item => (
+                <div
+                  key={item.name}
+                  className="panel rounded-xl p-5 flex flex-col"
+                  style={item.connected ? { borderColor: "rgba(0,255,136,0.15)" } : {}}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${item.color}14` }}>
+                      <Icon name={item.icon} fallback="Plug" size={18} style={{ color: item.color }} />
+                    </div>
+                    {item.connected && <span className="dot-online" />}
+                  </div>
+                  <div className="font-semibold text-sm mb-1">{item.name}</div>
+                  <div className="text-xs text-muted-foreground flex-1 mb-4 leading-relaxed">{item.desc}</div>
+                  <button
+                    className={`w-full py-1.5 rounded-lg text-xs font-semibold transition-all ${item.connected ? "text-muted-foreground" : "btn-electric"}`}
+                    style={item.connected ? { background: "hsl(var(--input))" } : {}}
+                  >
+                    {item.connected ? "Отключить" : "Подключить"}
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
+        );
+      })}
 
-      {/* Webhook builder */}
-      <div className="glass-card rounded-2xl p-6 border border-purple-500/20">
+      <div className="panel-glow rounded-xl p-6">
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(168,85,247,0.2)" }}>
-            <Icon name="Code" size={18} className="text-purple-400" />
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(0,212,255,0.1)" }}>
+            <Icon name="Code" size={18} style={{ color: "var(--electric)" }} />
           </div>
           <div>
-            <h2 className="font-bold">Конструктор Webhook</h2>
-            <p className="text-xs text-muted-foreground">Подключите любой внешний сервис через HTTP</p>
+            <h2 className="font-semibold text-sm">Пользовательский Webhook</h2>
+            <p className="hud-label">Получайте события системы на любой URL</p>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
-            <label className="text-xs text-muted-foreground mb-1.5 block">Событие</label>
-            <select className="w-full glass-card rounded-xl px-3 py-2.5 text-sm outline-none border border-border">
-              <option>Новая подписка</option>
-              <option>Платёж получен</option>
-              <option>Пользователь создан</option>
+            <label className="hud-label mb-1.5 block">Событие</label>
+            <select className="w-full panel rounded-lg px-3 py-2.5 text-xs outline-none">
+              <option>Миссия завершена</option>
+              <option>Дрон приземлился</option>
+              <option>Ошибка системы</option>
+              <option>Цикл ИИ выполнен</option>
             </select>
           </div>
           <div>
-            <label className="text-xs text-muted-foreground mb-1.5 block">URL</label>
+            <label className="hud-label mb-1.5 block">URL</label>
             <input
-              placeholder="https://example.com/webhook"
-              className="w-full glass-card rounded-xl px-3 py-2.5 text-sm outline-none border border-border placeholder:text-muted-foreground"
+              placeholder="https://your-server.com/hook"
+              className="w-full panel rounded-lg px-3 py-2.5 text-xs outline-none placeholder:text-muted-foreground"
             />
           </div>
           <div className="flex items-end">
-            <button className="w-full gradient-btn py-2.5 rounded-xl text-sm font-semibold">
-              Сохранить Webhook
-            </button>
+            <button className="w-full btn-electric py-2.5 rounded-lg text-xs font-semibold">Сохранить</button>
           </div>
         </div>
       </div>

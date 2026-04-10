@@ -1,159 +1,163 @@
 import Icon from "@/components/ui/icon";
 
-interface LandingPageProps {
-  onNavigate: (page: string) => void;
-}
+interface Props { onNavigate: (p: string) => void; }
 
-const features = [
-  { icon: "Zap", title: "Молниеносная скорость", desc: "API отвечает за < 50мс. Обрабатываем до 10 млн запросов в день без деградации." },
-  { icon: "Shield", title: "Безопасность уровня Enterprise", desc: "SOC 2 Type II, ISO 27001, E2E шифрование, 2FA, SSO и аудит всех действий." },
-  { icon: "BarChart3", title: "Аналитика в реальном времени", desc: "Дашборды, воронки, когортный анализ — всё в одном интерфейсе." },
-  { icon: "Plug", title: "200+ интеграций", desc: "Slack, Notion, Salesforce, HubSpot и любой REST/GraphQL API через конструктор." },
-  { icon: "FileDown", title: "Экспорт в любом формате", desc: "PDF, CSV, XLSX, JSON — автоматически по расписанию или по запросу." },
-  { icon: "Headphones", title: "Поддержка 24/7", desc: "Среднее время ответа — 3 минуты. Персональный менеджер в тарифе Enterprise." },
+const capabilities = [
+  { icon: "Brain", title: "Непрерывное самообучение", desc: "ИИ-ядро обновляет модели после каждого полёта — без ручной разметки данных и участия оператора.", color: "var(--electric)" },
+  { icon: "Radar", title: "Автономное планирование миссий", desc: "Система самостоятельно строит маршруты с учётом рельефа, запретных зон, погоды и целей задания.", color: "var(--signal-green)" },
+  { icon: "Eye", title: "Компьютерное зрение 360°", desc: "Реалтайм распознавание объектов, препятствий и целей с точностью 97.4% на скорости 120+ км/ч.", color: "var(--electric)" },
+  { icon: "Cpu", title: "Бортовой ИИ-процессор", desc: "Все вычисления на борту — нет задержки на передачу данных. Полная автономность при потере связи.", color: "var(--signal-green)" },
+  { icon: "Shield", title: "Отказоустойчивость", desc: "Тройное резервирование критических узлов. При любой аварии система выполняет безопасную посадку.", color: "var(--electric)" },
+  { icon: "Activity", title: "Телеметрия в реальном времени", desc: "300+ параметров полёта, состояния систем и ИИ-модели. Экспорт в CSV, PDF, JSON.", color: "var(--signal-green)" },
 ];
 
-const plans = [
-  {
-    name: "Старт",
-    price: "990",
-    desc: "Для малого бизнеса",
-    features: ["5 пользователей", "10 ГБ хранилища", "API 100к запросов/мес", "Email поддержка"],
-    accent: "border-border",
-    badge: null,
-  },
-  {
-    name: "Бизнес",
-    price: "3 490",
-    desc: "Для растущих команд",
-    features: ["50 пользователей", "100 ГБ хранилища", "API 1М запросов/мес", "Приоритетная поддержка", "Экспорт PDF/CSV/XLSX"],
-    accent: "border-purple-500/50",
-    badge: "Популярный",
-  },
-  {
-    name: "Enterprise",
-    price: "Индивид.",
-    desc: "Для корпораций",
-    features: ["Безлимит пользователей", "Безлимит хранилища", "SLA 99.99%", "Персональный менеджер", "On-premise"],
-    accent: "border-cyan-500/30",
-    badge: null,
-  },
+const stats = [
+  { val: "97.4%", label: "Точность распознавания" },
+  { val: "< 12ms", label: "Латентность решений" },
+  { val: "0", label: "Операторов требуется" },
+  { val: "∞", label: "Циклов самообучения" },
 ];
 
-export default function LandingPage({ onNavigate }: LandingPageProps) {
+export default function LandingPage({ onNavigate }: Props) {
   return (
-    <div className="min-h-screen mesh-bg">
+    <div className="min-h-screen grid-bg">
       {/* Hero */}
-      <section className="relative px-6 pt-24 pb-20 text-center max-w-5xl mx-auto animate-fade-in">
-        <div className="inline-flex items-center gap-2 glass-card rounded-full px-4 py-1.5 mb-8 text-sm text-muted-foreground">
-          <span className="pulse-dot"></span>
-          Более 14 000 компаний уже на борту
+      <section className="relative radar-bg overflow-hidden px-6 pt-28 pb-24 max-w-6xl mx-auto text-center fade-up">
+        {/* Scan line */}
+        <div className="absolute inset-x-0 top-0 h-64 overflow-hidden pointer-events-none">
+          <div className="scan-line" />
         </div>
-        <h1 className="text-6xl font-black leading-tight mb-6">
-          Платформа, которая<br />
-          <span className="gradient-text">масштабирует бизнес</span>
+
+        <div className="inline-flex items-center gap-2 mb-8 px-4 py-1.5 rounded-full panel-glow text-xs font-semibold tracking-widest uppercase">
+          <span className="dot-online" />
+          <span style={{ color: "var(--electric)" }}>Система активна · v2.4.1</span>
+        </div>
+
+        <h1 className="text-6xl md:text-7xl font-bold leading-tight mb-6 tracking-tight">
+          <span className="gradient-text">SoloFly</span><br />
+          <span className="text-4xl md:text-5xl font-normal" style={{ color: "hsl(var(--muted-foreground))" }}>
+            БПЛА летит. Сам. Всегда.
+          </span>
         </h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-          NovaSaaS объединяет аналитику, автоматизацию и интеграции в едином рабочем пространстве. Начните за 5 минут.
+
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed">
+          Автономная система управления дроном на базе ИИ — планирует маршруты, управляет полётом,
+          анализирует среду и самообучается после каждой миссии. Без оператора.
         </p>
-        <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={() => onNavigate("dashboard")}
-            className="gradient-btn px-8 py-3.5 rounded-xl font-semibold text-base"
-          >
-            Начать бесплатно
+
+        <div className="flex items-center justify-center gap-4 mb-16">
+          <button onClick={() => onNavigate("dashboard")} className="btn-electric px-8 py-3.5 rounded-lg text-sm">
+            Запустить систему →
           </button>
-          <button className="glass-card px-8 py-3.5 rounded-xl font-semibold text-base hover:bg-white/8 transition-all">
-            Смотреть демо →
+          <button className="btn-ghost px-8 py-3.5 rounded-lg text-sm">
+            Смотреть демо полёт
           </button>
         </div>
 
-        {/* Floating stats */}
-        <div className="grid grid-cols-3 gap-4 mt-16 max-w-2xl mx-auto">
-          {[
-            { val: "99.99%", label: "Uptime SLA" },
-            { val: "< 50ms", label: "API латентность" },
-            { val: "14K+", label: "Клиентов" },
-          ].map((s) => (
-            <div key={s.label} className="glass-card rounded-2xl p-5">
-              <div className="text-3xl font-black gradient-text">{s.val}</div>
-              <div className="text-sm text-muted-foreground mt-1">{s.label}</div>
+        {/* Drone SVG schematic */}
+        <div className="relative w-64 h-64 mx-auto mb-16">
+          <div className="absolute inset-0 rounded-full" style={{ border: "1px solid rgba(0,212,255,0.12)", animation: "droneSpin 20s linear infinite" }} />
+          <div className="absolute inset-4 rounded-full" style={{ border: "1px dashed rgba(0,212,255,0.08)" }} />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-20 h-20 rounded-2xl flex items-center justify-center panel-glow">
+              <Icon name="Navigation" size={40} style={{ color: "var(--electric)" }} />
+            </div>
+          </div>
+          {/* Corner rotors */}
+          {["-top-2 -left-2", "-top-2 -right-2", "-bottom-2 -left-2", "-bottom-2 -right-2"].map((pos, i) => (
+            <div key={i} className={`absolute ${pos} w-8 h-8 rounded-full flex items-center justify-center`} style={{ background: "rgba(0,212,255,0.1)", border: "1px solid rgba(0,212,255,0.25)" }}>
+              <div className="w-3 h-3 rounded-full" style={{ background: "var(--electric)", boxShadow: "0 0 8px var(--electric)" }} />
+            </div>
+          ))}
+          {/* Orbit dot */}
+          <div className="absolute inset-0 animate-spin" style={{ animationDuration: "4s" }}>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full" style={{ background: "var(--signal-green)", boxShadow: "0 0 8px var(--signal-green)" }} />
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
+          {stats.map((s) => (
+            <div key={s.label} className="panel-glow p-5 rounded-xl text-center">
+              <div className="hud-value text-2xl gradient-text mb-1">{s.val}</div>
+              <div className="hud-label">{s.label}</div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Features */}
-      <section className="px-6 py-16 max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-black mb-4">Всё что нужно — <span className="gradient-text-pink">в одном месте</span></h2>
-          <p className="text-muted-foreground text-lg">Никакого зоопарка сервисов. Один продукт — все инструменты.</p>
+      {/* Capabilities */}
+      <section className="px-6 py-20 max-w-6xl mx-auto">
+        <div className="text-center mb-14">
+          <div className="tag tag-electric mb-4">Возможности системы</div>
+          <h2 className="text-4xl font-bold mb-4">
+            Полная автономность —<br /><span className="gradient-text">не маркетинг, а факт</span>
+          </h2>
+          <p className="text-muted-foreground max-w-xl mx-auto">
+            SoloFly принимает все решения самостоятельно. От взлёта до посадки.
+          </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {features.map((f) => (
-            <div key={f.title} className="stat-card rounded-2xl">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4" style={{ background: "rgba(168,85,247,0.15)" }}>
-                <Icon name={f.icon} fallback="Star" size={20} className="text-purple-400" />
+          {capabilities.map((c) => (
+            <div key={c.title} className="panel p-6 rounded-xl hover:border-[rgba(0,212,255,0.2)] transition-all group">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ background: `${c.color}15` }}>
+                <Icon name={c.icon} fallback="Cpu" size={20} style={{ color: c.color }} />
               </div>
-              <h3 className="font-bold text-base mb-2">{f.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+              <h3 className="font-semibold mb-2 text-sm">{c.title}</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">{c.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Pricing */}
-      <section className="px-6 py-16 max-w-5xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-black mb-4">Прозрачные <span className="gradient-text">тарифы</span></h2>
-          <p className="text-muted-foreground">Без скрытых платежей. Отмена в один клик.</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {plans.map((p) => (
-            <div
-              key={p.name}
-              className={`glass-card rounded-2xl p-6 border ${p.accent} relative flex flex-col ${p.badge ? "glow-purple" : ""}`}
-            >
-              {p.badge && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="badge-pill" style={{ background: "var(--neon-purple)", color: "white" }}>{p.badge}</span>
-                </div>
-              )}
-              <div className="mb-5">
-                <div className="text-sm text-muted-foreground mb-1">{p.name}</div>
-                <div className="text-4xl font-black mb-1">
-                  {p.price !== "Индивид." ? `${p.price}₽` : p.price}
-                </div>
-                <div className="text-sm text-muted-foreground">{p.desc}</div>
-              </div>
-              <ul className="space-y-2.5 flex-1 mb-6">
-                {p.features.map((feat) => (
-                  <li key={feat} className="flex items-center gap-2 text-sm">
-                    <Icon name="Check" size={14} className="text-green-400 shrink-0" />
-                    {feat}
-                  </li>
+      {/* AI learning loop */}
+      <section className="px-6 py-20 max-w-5xl mx-auto">
+        <div className="panel-glow rounded-2xl p-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+            <div>
+              <div className="tag tag-green mb-4">Самообучение</div>
+              <h2 className="text-3xl font-bold mb-4">Каждый полёт делает систему умнее</h2>
+              <p className="text-muted-foreground leading-relaxed mb-6">
+                После завершения миссии бортовой ИИ анализирует принятые решения, сравнивает с оптимальными траекториями и обновляет нейронную сеть. Без разметчиков, без датасетов, без инженеров.
+              </p>
+              <div className="space-y-3">
+                {["Обнаружение паттернов в новых средах", "Улучшение точности при повторных миссиях", "Адаптация к погодным условиям", "Оптимизация расхода заряда АКБ"].map((f) => (
+                  <div key={f} className="flex items-center gap-3 text-sm">
+                    <Icon name="CheckCircle" size={15} style={{ color: "var(--signal-green)" }} className="shrink-0" />
+                    {f}
+                  </div>
                 ))}
-              </ul>
-              <button
-                onClick={() => onNavigate("subscriptions")}
-                className={`w-full py-3 rounded-xl font-semibold text-sm transition-all ${p.badge ? "gradient-btn" : "glass-card hover:bg-white/8"}`}
-              >
-                {p.price === "Индивид." ? "Связаться с нами" : "Выбрать тариф"}
-              </button>
+              </div>
             </div>
-          ))}
+            <div className="space-y-3">
+              {[
+                { step: "01", label: "Полёт", desc: "Система выполняет миссию" },
+                { step: "02", label: "Сбор данных", desc: "Телеметрия + видео + решения" },
+                { step: "03", label: "Анализ ИИ", desc: "Оценка оптимальности траекторий" },
+                { step: "04", label: "Обновление модели", desc: "Веса нейросети обновлены" },
+              ].map((s, i) => (
+                <div key={i} className="flex items-center gap-4 p-4 panel rounded-xl">
+                  <span className="hud-value text-sm" style={{ color: "var(--electric)" }}>{s.step}</span>
+                  <div className="flex-1">
+                    <div className="font-semibold text-sm">{s.label}</div>
+                    <div className="text-xs text-muted-foreground">{s.desc}</div>
+                  </div>
+                  {i < 3 && <Icon name="ArrowDown" size={14} className="text-muted-foreground" />}
+                  {i === 3 && <span className="dot-online" />}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="px-6 py-16 max-w-4xl mx-auto text-center">
-        <div className="glass-card rounded-3xl p-12 glow-purple border border-purple-500/20">
-          <h2 className="text-4xl font-black mb-4">Готовы к запуску?</h2>
-          <p className="text-muted-foreground text-lg mb-8">14 дней бесплатно. Без привязки карты.</p>
-          <button onClick={() => onNavigate("dashboard")} className="gradient-btn px-10 py-4 rounded-xl font-bold text-lg">
-            Создать аккаунт →
-          </button>
-        </div>
+      <section className="px-6 py-20 max-w-3xl mx-auto text-center">
+        <h2 className="text-4xl font-bold mb-4">Готовы к первому автономному полёту?</h2>
+        <p className="text-muted-foreground mb-8">Запустите систему и наблюдайте — оператор больше не нужен.</p>
+        <button onClick={() => onNavigate("dashboard")} className="btn-electric px-10 py-4 rounded-lg font-bold">
+          Войти в систему
+        </button>
       </section>
     </div>
   );

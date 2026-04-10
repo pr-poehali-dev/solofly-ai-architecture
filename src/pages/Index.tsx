@@ -2,14 +2,14 @@ import { useState } from "react";
 import Layout from "@/components/Layout";
 import LandingPage from "./LandingPage";
 import DashboardPage from "./DashboardPage";
-import ProfilePage from "./ProfilePage";
-import SubscriptionsPage from "./SubscriptionsPage";
-import BillingPage from "./BillingPage";
+import MissionsPage from "./MissionsPage";
+import AIPage from "./AIPage";
+import FlightLogPage from "./FlightLogPage";
 import ApiDocsPage from "./ApiDocsPage";
 import SupportPage from "./SupportPage";
 import IntegrationsPage from "./IntegrationsPage";
 
-type Page = "landing" | "dashboard" | "profile" | "subscriptions" | "billing" | "api" | "support" | "integrations";
+type Page = "landing" | "dashboard" | "missions" | "ai" | "flightlog" | "api" | "support" | "integrations";
 
 export default function Index() {
   const [page, setPage] = useState<Page>("landing");
@@ -21,9 +21,9 @@ export default function Index() {
     switch (page) {
       case "landing": return <LandingPage onNavigate={navigate} />;
       case "dashboard": return <DashboardPage />;
-      case "profile": return <ProfilePage />;
-      case "subscriptions": return <SubscriptionsPage />;
-      case "billing": return <BillingPage />;
+      case "missions": return <MissionsPage />;
+      case "ai": return <AIPage />;
+      case "flightlog": return <FlightLogPage />;
       case "api": return <ApiDocsPage />;
       case "support": return <SupportPage />;
       case "integrations": return <IntegrationsPage />;

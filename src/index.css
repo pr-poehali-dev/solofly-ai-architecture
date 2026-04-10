@@ -4,49 +4,52 @@
 
 @layer base {
   :root {
-    --background: 230 20% 6%;
-    --foreground: 220 20% 95%;
+    --background: 210 25% 4%;
+    --foreground: 195 20% 92%;
 
-    --card: 230 18% 9%;
-    --card-foreground: 220 20% 95%;
+    --card: 210 22% 7%;
+    --card-foreground: 195 20% 92%;
 
-    --popover: 230 18% 9%;
-    --popover-foreground: 220 20% 95%;
+    --popover: 210 22% 7%;
+    --popover-foreground: 195 20% 92%;
 
-    --primary: 262 83% 68%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 195 100% 50%;
+    --primary-foreground: 210 25% 4%;
 
-    --secondary: 230 15% 14%;
-    --secondary-foreground: 220 20% 85%;
+    --secondary: 210 20% 12%;
+    --secondary-foreground: 195 15% 75%;
 
-    --muted: 230 15% 14%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 210 20% 12%;
+    --muted-foreground: 210 10% 48%;
 
-    --accent: 192 90% 55%;
-    --accent-foreground: 230 20% 6%;
+    --accent: 142 76% 48%;
+    --accent-foreground: 210 25% 4%;
 
-    --destructive: 0 72% 60%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 230 15% 16%;
-    --input: 230 15% 14%;
-    --ring: 262 83% 68%;
+    --border: 210 18% 14%;
+    --input: 210 20% 10%;
+    --ring: 195 100% 50%;
 
-    --radius: 0.75rem;
+    --radius: 0.625rem;
 
-    --sidebar-background: 230 20% 7%;
-    --sidebar-foreground: 220 15% 75%;
-    --sidebar-primary: 262 83% 68%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 230 15% 14%;
-    --sidebar-accent-foreground: 220 20% 95%;
-    --sidebar-border: 230 15% 13%;
-    --sidebar-ring: 262 83% 68%;
+    --sidebar-background: 210 25% 5%;
+    --sidebar-foreground: 210 12% 60%;
+    --sidebar-primary: 195 100% 50%;
+    --sidebar-primary-foreground: 210 25% 4%;
+    --sidebar-accent: 210 20% 11%;
+    --sidebar-accent-foreground: 195 20% 92%;
+    --sidebar-border: 210 18% 11%;
+    --sidebar-ring: 195 100% 50%;
 
-    --neon-purple: #a855f7;
-    --neon-cyan: #22d3ee;
-    --neon-pink: #ec4899;
-    --neon-green: #4ade80;
+    --electric: #00d4ff;
+    --electric-dim: rgba(0, 212, 255, 0.12);
+    --signal-green: #00ff88;
+    --signal-green-dim: rgba(0, 255, 136, 0.12);
+    --warning: #ff9500;
+    --danger: #ff3b30;
+    --grid-line: rgba(0, 212, 255, 0.06);
   }
 }
 
@@ -54,14 +57,13 @@
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
-    font-family: "Golos Text", sans-serif;
+    font-family: "IBM Plex Sans", "Golos Text", sans-serif;
   }
-
   ::-webkit-scrollbar {
-    width: 6px;
+    width: 5px;
+    height: 5px;
   }
   ::-webkit-scrollbar-track {
     background: hsl(var(--background));
@@ -73,99 +75,156 @@
 }
 
 @layer utilities {
+  /* Typography */
   .gradient-text {
-    background: linear-gradient(135deg, var(--neon-purple), var(--neon-cyan));
+    background: linear-gradient(120deg, var(--electric), var(--signal-green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .gradient-text-warm {
+    background: linear-gradient(120deg, #ff9500, #ff3b30);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  .gradient-text-pink {
-    background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  /* Buttons */
+  .btn-electric {
+    background: var(--electric);
+    color: hsl(210 25% 4%);
+    font-weight: 700;
+    transition: all 0.2s;
   }
-
-  .gradient-btn {
-    background: linear-gradient(135deg, var(--neon-purple), var(--neon-cyan));
-    color: white;
-    transition:
-      opacity 0.2s,
-      transform 0.2s;
-  }
-
-  .gradient-btn:hover {
-    opacity: 0.9;
+  .btn-electric:hover {
+    opacity: 0.88;
     transform: translateY(-1px);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
   }
 
-  .glass-card {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
+  .btn-ghost {
+    background: rgba(0, 212, 255, 0.07);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    color: var(--electric);
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover {
+    background: rgba(0, 212, 255, 0.13);
   }
 
-  .glow-purple {
-    box-shadow: 0 0 30px rgba(168, 85, 247, 0.25);
+  /* Cards */
+  .panel {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+  }
+  .panel-glow {
+    background: hsl(var(--card));
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    border-radius: var(--radius);
+    box-shadow:
+      0 0 0 1px rgba(0, 212, 255, 0.05),
+      inset 0 1px 0 rgba(0, 212, 255, 0.05);
+  }
+  .panel-danger {
+    background: hsl(var(--card));
+    border: 1px solid rgba(255, 59, 48, 0.25);
+    border-radius: var(--radius);
+  }
+  .panel-success {
+    background: hsl(var(--card));
+    border: 1px solid rgba(0, 255, 136, 0.2);
+    border-radius: var(--radius);
   }
 
-  .glow-cyan {
-    box-shadow: 0 0 30px rgba(34, 211, 238, 0.2);
-  }
-
-  .mesh-bg {
-    background-image:
-      radial-gradient(
-        at 20% 20%,
-        rgba(168, 85, 247, 0.15) 0px,
-        transparent 50%
-      ),
-      radial-gradient(at 80% 10%, rgba(34, 211, 238, 0.1) 0px, transparent 50%),
-      radial-gradient(at 60% 80%, rgba(236, 72, 153, 0.1) 0px, transparent 50%);
-  }
-
-  .nav-link {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200;
+  /* Nav */
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
     color: hsl(var(--muted-foreground));
+    transition: all 0.15s;
+    width: 100%;
   }
-
-  .nav-link:hover {
-    background: rgba(255, 255, 255, 0.06);
+  .nav-item:hover {
+    background: rgba(0, 212, 255, 0.06);
     color: hsl(var(--foreground));
   }
-
-  .nav-link.active {
-    background: rgba(168, 85, 247, 0.15);
-    color: var(--neon-purple);
-    border: 1px solid rgba(168, 85, 247, 0.25);
+  .nav-item.active {
+    background: rgba(0, 212, 255, 0.1);
+    color: var(--electric);
+    border: 1px solid rgba(0, 212, 255, 0.18);
   }
 
-  .stat-card {
-    @apply glass-card rounded-2xl p-5 transition-all duration-300;
+  /* Grid bg */
+  .grid-bg {
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .radar-bg {
+    background-image: radial-gradient(
+      ellipse at 50% 50%,
+      rgba(0, 212, 255, 0.07) 0%,
+      transparent 65%
+    );
   }
 
-  .stat-card:hover {
-    background: rgba(255, 255, 255, 0.06);
-    transform: translateY(-2px);
+  /* Status dots */
+  .dot-online {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--signal-green);
+    box-shadow: 0 0 8px var(--signal-green);
+    animation: blink 2.4s infinite;
+  }
+  .dot-warning {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--warning);
+    box-shadow: 0 0 8px var(--warning);
+    animation: blink 1.2s infinite;
+  }
+  .dot-danger {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--danger);
+    box-shadow: 0 0 8px var(--danger);
+  }
+  .dot-offline {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: hsl(var(--muted-foreground));
   }
 
-  .badge-pill {
-    @apply text-xs font-semibold px-2.5 py-0.5 rounded-full;
+  @keyframes blink {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
   }
 
-  .mono {
-    font-family: "JetBrains Mono", monospace;
+  /* Animated entry */
+  .fade-up {
+    animation: fadeUp 0.45s ease both;
   }
-
-  .animate-fade-in {
-    animation: fadeIn 0.4s ease forwards;
-  }
-
-  @keyframes fadeIn {
+  @keyframes fadeUp {
     from {
       opacity: 0;
-      transform: translateY(8px);
+      transform: translateY(10px);
     }
     to {
       opacity: 1;
@@ -173,22 +232,106 @@
     }
   }
 
-  .pulse-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--neon-green);
-    box-shadow: 0 0 8px var(--neon-green);
-    animation: pulseDot 2s infinite;
+  /* HUD elements */
+  .hud-value {
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .hud-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
   }
 
-  @keyframes pulseDot {
-    0%,
-    100% {
-      opacity: 1;
+  /* Progress bars */
+  .bar-track {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+
+  /* Badges */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .tag-electric {
+    background: rgba(0, 212, 255, 0.12);
+    color: var(--electric);
+  }
+  .tag-green {
+    background: rgba(0, 255, 136, 0.12);
+    color: var(--signal-green);
+  }
+  .tag-warning {
+    background: rgba(255, 149, 0, 0.12);
+    color: var(--warning);
+  }
+  .tag-danger {
+    background: rgba(255, 59, 48, 0.12);
+    color: var(--danger);
+  }
+  .tag-muted {
+    background: rgba(255, 255, 255, 0.06);
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Drone icon spin */
+  .drone-spin {
+    animation: droneSpin 8s linear infinite;
+  }
+  @keyframes droneSpin {
+    0% {
+      transform: rotate(0deg);
     }
-    50% {
-      opacity: 0.4;
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Scan line */
+  .scan-line {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--electric),
+      transparent
+    );
+    animation: scan 3s ease-in-out infinite;
+    opacity: 0.6;
+  }
+  @keyframes scan {
+    0% {
+      top: 0;
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.6;
+    }
+    90% {
+      opacity: 0.6;
+    }
+    100% {
+      top: 100%;
+      opacity: 0;
     }
   }
 }

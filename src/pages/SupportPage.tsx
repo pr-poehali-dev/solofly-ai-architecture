@@ -2,115 +2,105 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 
 const tickets = [
-  { id: "TK-1042", subject: "Не работает экспорт в PDF", status: "open", priority: "high", date: "10 апр", unread: true },
-  { id: "TK-1038", subject: "Вопрос по тарификации API", status: "pending", priority: "medium", date: "8 апр", unread: false },
-  { id: "TK-1031", subject: "Настройка Webhook для Slack", status: "closed", priority: "low", date: "3 апр", unread: false },
-  { id: "TK-1024", subject: "Ошибка при импорте CSV", status: "closed", priority: "medium", date: "28 мар", unread: false },
+  { id: "TK-204", subject: "PathNet не огибает новый тип препятствий", status: "open", priority: "high", date: "10 апр", drone: "SF-004" },
+  { id: "TK-203", subject: "Сбой WebSocket при скорости > 90 км/ч", status: "pending", priority: "medium", date: "9 апр", drone: "SF-001" },
+  { id: "TK-202", subject: "Экспорт CSV не включает GPS-координаты", status: "closed", priority: "low", date: "7 апр", drone: "—" },
 ];
 
 const faq = [
-  { q: "Как получить API ключ?", a: "Перейдите в раздел API документации → нажмите «Показать» рядом с полем ключа." },
-  { q: "Как экспортировать данные в PDF?", a: "В любом разделе с данными нажмите кнопку «Экспорт PDF» в верхнем правом углу." },
-  { q: "Можно ли подключить свой домен?", a: "Да, в тарифе Enterprise доступен белый лейбл с кастомным доменом." },
-  { q: "Как добавить пользователей в команду?", a: "Настройки → Команда → Пригласить пользователя. Доступно по тарифу." },
+  { q: "Как добавить новый БПЛА в флот?", a: "Перейдите в «Флот» → «Добавить дрон», введите серийный номер и установите прошивку SoloFly Agent." },
+  { q: "Что происходит при потере связи с дроном?", a: "Бортовой ИИ переходит в автономный режим, завершает задание и выполняет посадку в ближайшей безопасной точке." },
+  { q: "Как экспортировать телеметрию в CSV?", a: "В разделе «История полётов» выберите записи и нажмите кнопку CSV вверху страницы." },
+  { q: "Как часто обновляются ИИ-модели?", a: "После каждого полёта автоматически. Крупные обновления архитектуры проходят ревью перед деплоем." },
+  { q: "Можно ли работать без интернета?", a: "Да. Бортовой ИИ полностью автономен. Интернет нужен только для синхронизации моделей в облако." },
 ];
 
-const statusInfo: Record<string, { label: string; cls: string }> = {
-  open: { label: "Открыт", cls: "bg-green-500/15 text-green-400" },
-  pending: { label: "Ожидает", cls: "bg-yellow-500/15 text-yellow-400" },
-  closed: { label: "Закрыт", cls: "bg-white/10 text-muted-foreground" },
-};
-
-const priorityInfo: Record<string, { label: string; cls: string }> = {
-  high: { label: "Высокий", cls: "text-red-400" },
-  medium: { label: "Средний", cls: "text-yellow-400" },
-  low: { label: "Низкий", cls: "text-muted-foreground" },
-};
+const statusCls: Record<string, string> = { open: "tag-green", pending: "tag-warning", closed: "tag-muted" };
+const statusLabel: Record<string, string> = { open: "Открыт", pending: "В работе", closed: "Закрыт" };
 
 export default function SupportPage() {
+  const [tab, setTab] = useState<"tickets" | "faq" | "contact">("tickets");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<"tickets" | "faq" | "contact">("tickets");
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between mb-2">
+    <div className="p-6 space-y-5 fade-up">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black">Служба поддержки</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Среднее время ответа: <span className="text-green-400 font-semibold">~3 минуты</span></p>
+          <h1 className="text-xl font-bold">Служба поддержки</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            Среднее время ответа: <span style={{ color: "var(--signal-green)" }}>~15 мин</span>
+          </p>
         </div>
-        <button className="gradient-btn px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2">
-          <Icon name="Plus" size={14} />
+        <button className="btn-electric px-4 py-2 rounded-lg text-xs flex items-center gap-2">
+          <Icon name="Plus" size={13} />
           Новый тикет
         </button>
       </div>
 
-      {/* Status */}
-      <div className="glass-card rounded-2xl p-4 flex items-center gap-4">
-        <div className="pulse-dot shrink-0"></div>
-        <div>
-          <span className="font-semibold text-sm">Все системы работают нормально</span>
-          <span className="text-muted-foreground text-sm ml-2">· Проверено 10 апр 2026, 12:00</span>
-        </div>
-        <button className="ml-auto text-sm text-cyan-400 hover:text-cyan-300 transition-colors">
-          Статус страница →
-        </button>
+      <div className="panel-success rounded-xl p-4 flex items-center gap-3">
+        <span className="dot-online" />
+        <span className="text-sm font-medium">Все системы работают штатно</span>
+        <span className="text-muted-foreground text-xs ml-auto">10 апр, 14:30</span>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 glass-card rounded-xl p-1 w-fit">
-        {(["tickets", "faq", "contact"] as const).map((t) => (
+      <div className="flex gap-1" style={{ background: "hsl(var(--input))", borderRadius: 10, padding: 4, width: "fit-content" }}>
+        {(["tickets", "faq", "contact"] as const).map(t => (
           <button
             key={t}
-            onClick={() => setActiveTab(t)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === t ? "gradient-btn" : "text-muted-foreground hover:text-foreground"}`}
+            onClick={() => setTab(t)}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${tab === t ? "btn-electric" : "text-muted-foreground hover:text-foreground"}`}
           >
             {t === "tickets" ? "Тикеты" : t === "faq" ? "FAQ" : "Контакты"}
           </button>
         ))}
       </div>
 
-      {activeTab === "tickets" && (
-        <div className="glass-card rounded-2xl p-6">
-          <div className="space-y-3">
-            {tickets.map((t) => (
-              <div
-                key={t.id}
-                className={`flex items-center gap-4 p-4 rounded-xl hover:bg-white/4 transition-all cursor-pointer border ${t.unread ? "border-purple-500/30" : "border-transparent"}`}
-              >
-                {t.unread && <div className="w-2 h-2 rounded-full shrink-0" style={{ background: "var(--neon-purple)" }} />}
-                {!t.unread && <div className="w-2 h-2 shrink-0" />}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="mono text-xs text-muted-foreground">{t.id}</span>
-                    <span className={`text-xs font-medium ${priorityInfo[t.priority].cls}`}>● {priorityInfo[t.priority].label}</span>
-                  </div>
-                  <div className="font-medium text-sm truncate">{t.subject}</div>
+      {tab === "tickets" && (
+        <div className="panel rounded-xl overflow-hidden">
+          {tickets.map((t, i) => (
+            <div
+              key={t.id}
+              className={`flex items-center gap-4 px-5 py-4 hover:bg-white/2 transition-all cursor-pointer ${i < tickets.length - 1 ? "border-b" : ""}`}
+              style={{ borderColor: "hsl(var(--border))" }}
+            >
+              <Icon
+                name={t.priority === "high" ? "AlertCircle" : t.priority === "medium" ? "AlertTriangle" : "Info"}
+                fallback="Info"
+                size={15}
+                style={{ color: t.priority === "high" ? "var(--danger)" : t.priority === "medium" ? "var(--warning)" : "var(--electric)" }}
+                className="shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="font-mono text-xs" style={{ color: "var(--electric)" }}>{t.id}</span>
+                  {t.drone !== "—" && <span className="tag tag-electric">{t.drone}</span>}
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className={`badge-pill ${statusInfo[t.status].cls}`}>{statusInfo[t.status].label}</span>
-                  <span className="text-xs text-muted-foreground">{t.date}</span>
-                  <Icon name="ChevronRight" size={14} className="text-muted-foreground" />
-                </div>
+                <div className="font-medium text-sm truncate">{t.subject}</div>
               </div>
-            ))}
-          </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className={`tag ${statusCls[t.status]}`}>{statusLabel[t.status]}</span>
+                <span className="hud-label">{t.date}</span>
+                <Icon name="ChevronRight" size={13} className="text-muted-foreground" />
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      {activeTab === "faq" && (
-        <div className="glass-card rounded-2xl p-6 space-y-2">
+      {tab === "faq" && (
+        <div className="panel rounded-xl overflow-hidden">
           {faq.map((item, i) => (
-            <div key={i} className="border border-border rounded-xl overflow-hidden">
+            <div key={i} className={i < faq.length - 1 ? "border-b" : ""} style={{ borderColor: "hsl(var(--border))" }}>
               <button
                 onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                className="w-full flex items-center justify-between p-4 text-left hover:bg-white/4 transition-all"
+                className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/2 transition-all"
               >
                 <span className="font-medium text-sm">{item.q}</span>
-                <Icon name={openFaq === i ? "ChevronUp" : "ChevronDown"} size={16} className="text-muted-foreground shrink-0" />
+                <Icon name={openFaq === i ? "ChevronUp" : "ChevronDown"} size={15} className="text-muted-foreground shrink-0" />
               </button>
               {openFaq === i && (
-                <div className="px-4 pb-4 text-sm text-muted-foreground border-t border-border pt-3">
-                  {item.a}
+                <div className="px-5 pb-4 text-sm text-muted-foreground border-t" style={{ borderColor: "hsl(var(--border))" }}>
+                  <p className="pt-3 leading-relaxed">{item.a}</p>
                 </div>
               )}
             </div>
@@ -118,20 +108,20 @@ export default function SupportPage() {
         </div>
       )}
 
-      {activeTab === "contact" && (
+      {tab === "contact" && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
-            { icon: "MessageCircle", title: "Live чат", desc: "Онлайн с 9:00 до 21:00 МСК", action: "Открыть чат", color: "var(--neon-purple)" },
-            { icon: "Mail", title: "Email поддержка", desc: "support@novasaas.ru", action: "Написать письмо", color: "var(--neon-cyan)" },
-            { icon: "Phone", title: "Звонок", desc: "Только Enterprise клиентам", action: "Запросить звонок", color: "var(--neon-pink)" },
+            { icon: "MessageCircle", title: "Чат инженера", desc: "Прямая линия с разработчиками SoloFly", action: "Открыть чат", color: "var(--electric)" },
+            { icon: "Mail", title: "Email", desc: "support@solofly.ai · ответ до 4 ч", action: "Написать", color: "var(--signal-green)" },
+            { icon: "Phone", title: "Горячая линия", desc: "Для критических инцидентов 24/7", action: "Позвонить", color: "var(--warning)" },
           ].map((c) => (
-            <div key={c.title} className="glass-card rounded-2xl p-6 flex flex-col items-center text-center">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style={{ background: `${c.color}20` }}>
-                <Icon name={c.icon} fallback="HelpCircle" size={22} style={{ color: c.color }} />
+            <div key={c.title} className="panel rounded-xl p-6 flex flex-col items-center text-center">
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style={{ background: `${c.color}15` }}>
+                <Icon name={c.icon} fallback="HelpCircle" size={20} style={{ color: c.color }} />
               </div>
-              <h3 className="font-bold mb-1">{c.title}</h3>
-              <p className="text-sm text-muted-foreground mb-5">{c.desc}</p>
-              <button className="w-full gradient-btn py-2.5 rounded-xl text-sm font-semibold">{c.action}</button>
+              <h3 className="font-semibold mb-1 text-sm">{c.title}</h3>
+              <p className="text-xs text-muted-foreground mb-5 leading-relaxed">{c.desc}</p>
+              <button className="w-full btn-electric py-2 rounded-lg text-xs font-semibold">{c.action}</button>
             </div>
           ))}
         </div>

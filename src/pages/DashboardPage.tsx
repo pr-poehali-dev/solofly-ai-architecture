@@ -1,160 +1,150 @@
 import Icon from "@/components/ui/icon";
 
-const stats = [
-  { label: "Выручка за месяц", value: "₽ 2 847 300", change: "+18.4%", up: true, icon: "TrendingUp", color: "var(--neon-purple)" },
-  { label: "Активных подписок", value: "1 247", change: "+32", up: true, icon: "Users", color: "var(--neon-cyan)" },
-  { label: "API вызовов сегодня", value: "4.2M", change: "-3.1%", up: false, icon: "Activity", color: "var(--neon-pink)" },
-  { label: "Хранилище", value: "68.4 ГБ", change: "из 100 ГБ", up: true, icon: "HardDrive", color: "#4ade80" },
+const drones = [
+  { id: "SF-001", name: "Орёл-1", status: "flight", battery: 74, altitude: 128, speed: 42, mission: "Патруль периметра А" },
+  { id: "SF-002", name: "Орёл-2", status: "standby", battery: 98, altitude: 0, speed: 0, mission: "Ожидает задания" },
+  { id: "SF-003", name: "Орёл-3", status: "charging", battery: 31, altitude: 0, speed: 0, mission: "Зарядка" },
+  { id: "SF-004", name: "Сокол-1", status: "flight", battery: 52, altitude: 85, speed: 67, mission: "Картографирование B2" },
 ];
 
-const recentActivity = [
-  { action: "Новая подписка", user: "ООО Ромашка", plan: "Бизнес", time: "2 мин назад", type: "new" },
-  { action: "Экспорт данных", user: "АО Техпром", plan: "CSV, 3.4MB", time: "15 мин назад", type: "export" },
-  { action: "Обновление плана", user: "ИП Козлов", plan: "Старт → Бизнес", time: "1 час назад", type: "upgrade" },
-  { action: "Оплата получена", user: "ГК Цифра", plan: "₽ 34 900", time: "2 часа назад", type: "payment" },
-  { action: "Новый тикет", user: "Сервис Плюс", plan: "API ключи", time: "3 часа назад", type: "support" },
+const alerts = [
+  { type: "warning", msg: "SF-003: заряд < 35%", time: "2 мин" },
+  { type: "info", msg: "SF-001: обновлена модель ИИ (цикл #1247)", time: "8 мин" },
+  { type: "success", msg: "Миссия «Обзор-14» завершена успешно", time: "14 мин" },
+  { type: "info", msg: "SF-004: обнаружен новый объект, добавлен в датасет", time: "21 мин" },
 ];
 
-const typeColors: Record<string, string> = {
-  new: "#4ade80",
-  export: "var(--neon-cyan)",
-  upgrade: "var(--neon-purple)",
-  payment: "#facc15",
-  support: "var(--neon-pink)",
-};
-
-const typeIcons: Record<string, string> = {
-  new: "UserPlus",
-  export: "FileDown",
-  upgrade: "ArrowUpCircle",
-  payment: "CreditCard",
-  support: "MessageCircle",
+const statusMap: Record<string, { label: string; dot: string; cls: string }> = {
+  flight: { label: "В полёте", dot: "dot-online", cls: "tag-green" },
+  standby: { label: "Готов", dot: "dot-online", cls: "tag-electric" },
+  charging: { label: "Зарядка", dot: "dot-warning", cls: "tag-warning" },
+  error: { label: "Ошибка", dot: "dot-danger", cls: "tag-danger" },
 };
 
 export default function DashboardPage() {
+  const flying = drones.filter(d => d.status === "flight").length;
+
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between mb-2">
+    <div className="p-6 space-y-5 fade-up">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black">Обзор платформы</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Последнее обновление: только что</p>
+          <h1 className="text-xl font-bold">Командный центр</h1>
+          <p className="text-muted-foreground hud-label mt-0.5">
+            10 APR 2026 · 14:32 UTC+3 · ВСЕ СИСТЕМЫ В НОРМЕ
+          </p>
         </div>
         <div className="flex gap-2">
-          <button className="glass-card px-4 py-2 rounded-xl text-sm font-medium hover:bg-white/8 transition-all flex items-center gap-2">
-            <Icon name="Download" size={14} />
-            Экспорт PDF
+          <button className="btn-ghost px-4 py-2 rounded-lg text-xs flex items-center gap-2">
+            <Icon name="Download" size={13} />
+            Отчёт PDF
           </button>
-          <button className="gradient-btn px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2">
-            <Icon name="Plus" size={14} />
-            Добавить
+          <button className="btn-electric px-4 py-2 rounded-lg text-xs flex items-center gap-2">
+            <Icon name="Plus" size={13} />
+            Новая миссия
           </button>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {stats.map((s) => (
-          <div key={s.label} className="stat-card">
-            <div className="flex items-start justify-between mb-4">
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center"
-                style={{ background: `${s.color}20` }}
-              >
-                <Icon name={s.icon} fallback="BarChart2" size={18} style={{ color: s.color }} />
-              </div>
-              <span
-                className={`badge-pill text-xs ${s.up ? "bg-green-500/15 text-green-400" : "bg-red-500/15 text-red-400"}`}
-              >
-                {s.change}
-              </span>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          { icon: "Navigation", label: "В полёте", val: String(flying), color: "var(--signal-green)", sub: `из ${drones.length} дронов` },
+          { icon: "Brain", label: "Циклов ИИ за сутки", val: "1 247", color: "var(--electric)", sub: "+84 за час" },
+          { icon: "Target", label: "Миссий сегодня", val: "14", color: "var(--electric)", sub: "12 успешных" },
+          { icon: "Zap", label: "Мин. до посадки", val: "18", color: "var(--warning)", sub: "SF-001" },
+        ].map((s) => (
+          <div key={s.label} className="panel p-5 rounded-xl">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style={{ background: `${s.color}14` }}>
+              <Icon name={s.icon} fallback="Circle" size={16} style={{ color: s.color }} />
             </div>
-            <div className="text-2xl font-black mb-1">{s.value}</div>
-            <div className="text-sm text-muted-foreground">{s.label}</div>
+            <div className="hud-value text-2xl mb-0.5" style={{ color: s.color }}>{s.val}</div>
+            <div className="hud-label mb-0.5">{s.label}</div>
+            <div className="text-xs text-muted-foreground">{s.sub}</div>
           </div>
         ))}
       </div>
 
-      {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Revenue chart placeholder */}
-        <div className="lg:col-span-2 glass-card rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="font-bold">Выручка по месяцам</h2>
-            <select className="bg-transparent text-sm text-muted-foreground border border-border rounded-lg px-2 py-1">
-              <option>2026</option>
-              <option>2025</option>
-            </select>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 panel rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-sm">Флот БПЛА</h2>
+            <span className="tag tag-electric">{flying} в воздухе</span>
           </div>
-          <div className="flex items-end gap-2 h-40">
-            {[45, 62, 58, 75, 80, 95, 88, 102, 98, 115, 108, 124].map((h, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                <div
-                  className="w-full rounded-t-md transition-all duration-500"
-                  style={{
-                    height: `${(h / 130) * 100}%`,
-                    background: i === 11
-                      ? "linear-gradient(180deg, var(--neon-purple), var(--neon-cyan))"
-                      : "rgba(168,85,247,0.25)",
-                  }}
-                />
+          <div className="space-y-3">
+            {drones.map((d) => (
+              <div key={d.id} className="p-4 rounded-xl" style={{ background: "hsl(var(--input))" }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <span className={statusMap[d.status].dot} />
+                    <div>
+                      <span className="font-semibold text-sm">{d.name}</span>
+                      <span className="hud-label ml-2">{d.id}</span>
+                    </div>
+                  </div>
+                  <span className={`tag ${statusMap[d.status].cls}`}>{statusMap[d.status].label}</span>
+                </div>
+                <div className="grid grid-cols-4 gap-3 text-center">
+                  {[
+                    { label: "Заряд", val: `${d.battery}%` },
+                    { label: "Высота", val: `${d.altitude}м` },
+                    { label: "Скорость", val: `${d.speed}км/ч` },
+                    { label: "Миссия", val: d.mission.length > 14 ? d.mission.slice(0, 14) + "…" : d.mission },
+                  ].map((info) => (
+                    <div key={info.label}>
+                      <div className="hud-label mb-0.5">{info.label}</div>
+                      <div className="hud-value text-xs">{info.val}</div>
+                    </div>
+                  ))}
+                </div>
+                {d.status === "flight" && (
+                  <div className="mt-3 bar-track">
+                    <div className="bar-fill" style={{ width: `${d.battery}%`, background: d.battery > 40 ? "var(--signal-green)" : "var(--warning)" }} />
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-          <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-            {["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"].map((m) => (
-              <span key={m}>{m}</span>
             ))}
           </div>
         </div>
 
-        {/* Top plans */}
-        <div className="glass-card rounded-2xl p-6">
-          <h2 className="font-bold mb-5">Популярность тарифов</h2>
-          <div className="space-y-4">
-            {[
-              { name: "Бизнес", pct: 62, color: "var(--neon-purple)" },
-              { name: "Старт", pct: 28, color: "var(--neon-cyan)" },
-              { name: "Enterprise", pct: 10, color: "var(--neon-pink)" },
-            ].map((p) => (
-              <div key={p.name}>
-                <div className="flex justify-between text-sm mb-1.5">
-                  <span className="font-medium">{p.name}</span>
-                  <span className="text-muted-foreground">{p.pct}%</span>
+        <div className="space-y-4">
+          <div className="panel rounded-xl p-5">
+            <h2 className="font-semibold text-sm mb-4">Системные события</h2>
+            <div className="space-y-3">
+              {alerts.map((a, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div className="mt-0.5 shrink-0">
+                    {a.type === "warning" && <Icon name="AlertTriangle" size={14} style={{ color: "var(--warning)" }} />}
+                    {a.type === "info" && <Icon name="Info" size={14} style={{ color: "var(--electric)" }} />}
+                    {a.type === "success" && <Icon name="CheckCircle" size={14} style={{ color: "var(--signal-green)" }} />}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs leading-relaxed">{a.msg}</p>
+                    <span className="hud-label">{a.time} назад</span>
+                  </div>
                 </div>
-                <div className="h-2 rounded-full bg-white/8 overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${p.pct}%`, background: p.color }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="glass-card rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="font-bold">Последние события</h2>
-          <button className="text-sm text-purple-400 hover:text-purple-300 transition-colors">Все события →</button>
-        </div>
-        <div className="space-y-3">
-          {recentActivity.map((a, i) => (
-            <div key={i} className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/4 transition-all">
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: `${typeColors[a.type]}18` }}
-              >
-                <Icon name={typeIcons[a.type]} fallback="Bell" size={16} style={{ color: typeColors[a.type] }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm">{a.action}</div>
-                <div className="text-xs text-muted-foreground">{a.user} · {a.plan}</div>
-              </div>
-              <div className="text-xs text-muted-foreground shrink-0">{a.time}</div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          <div className="panel rounded-xl p-5">
+            <h2 className="font-semibold text-sm mb-4">ИИ-активность</h2>
+            <div className="space-y-3">
+              {[
+                { label: "Точность распознавания", val: 97, color: "var(--signal-green)" },
+                { label: "Загрузка CPU борта", val: 64, color: "var(--electric)" },
+                { label: "Уверенность траектории", val: 89, color: "var(--electric)" },
+              ].map((m) => (
+                <div key={m.label}>
+                  <div className="flex justify-between mb-1">
+                    <span className="hud-label">{m.label}</span>
+                    <span className="hud-value text-xs" style={{ color: m.color }}>{m.val}%</span>
+                  </div>
+                  <div className="bar-track">
+                    <div className="bar-fill" style={{ width: `${m.val}%`, background: m.color }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
