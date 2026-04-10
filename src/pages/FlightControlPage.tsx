@@ -1,26 +1,6 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
-
-const drones = [
-  {
-    id: "SF-001", name: "Орёл-1", status: "flight",
-    altitude: 128, speed: 42, heading: 245, battery: 74, temp: 38,
-    roll: 2.1, pitch: -1.4, yaw: 245.3,
-    wind: 8, vibration: "норма", gps: "17 спутников",
-    mode: "auto", stabilization: "active",
-    hardware: { weight: 2.4, motors: 4, battery_cap: 10000, max_speed: 90 },
-    maneuver: null,
-  },
-  {
-    id: "SF-004", name: "Сокол-1", status: "flight",
-    altitude: 85, speed: 67, heading: 112, battery: 52, temp: 41,
-    roll: 3.8, pitch: 2.1, yaw: 112.7,
-    wind: 14, vibration: "умеренная", gps: "14 спутников",
-    mode: "auto", stabilization: "active",
-    hardware: { weight: 3.1, motors: 6, battery_cap: 12000, max_speed: 120 },
-    maneuver: "обход объекта",
-  },
-];
+import { useLiveFleet } from "@/hooks/useLiveFleet";
 
 const maneuvers = [
   { id: "hover", label: "Зависание", icon: "Pause" },
@@ -32,10 +12,51 @@ const maneuvers = [
 ];
 
 export default function FlightControlPage() {
-  const [selDrone, setSelDrone] = useState("SF-001");
+  const { data: fleet, loading } = useLiveFleet(3000);
+  const [selDroneId, setSelDroneId] = useState("SF-001");
   const [activeManeuver, setActiveManeuver] = useState<string | null>(null);
 
-  const drone = drones.find(d => d.id === selDrone)!;
+  const drones = fleet?.drones ?? [];
+  const flyingDrones = drones.filter(d => d.status === "flight" || d.status === "standby");
+  const droneRaw = drones.find(d => d.id === selDroneId) ?? drones[0];
+
+  if (!droneRaw && !loading) {
+    return <div className="p-6 text-muted-foreground text-sm">Нет данных о дронах</div>;
+  }
+
+  // Адаптируем поля из БД к компоненту
+  const drone = droneRaw ? {
+    id: droneRaw.id,
+    name: droneRaw.name,
+    status: droneRaw.status,
+    altitude: Number(droneRaw.altitude),
+    speed: Number(droneRaw.speed),
+    heading: Number(droneRaw.heading),
+    battery: droneRaw.battery,
+    temp: droneRaw.temperature,
+    roll: 0,   // придёт из telemetry_history если есть
+    pitch: 0,
+    yaw: Number(droneRaw.heading),
+    wind: Number(droneRaw.wind),
+    vibration: droneRaw.vibration,
+    gps: `${droneRaw.gps_sats} спутников`,
+    hardware: {
+      weight: Number(droneRaw.hw_weight),
+      motors: droneRaw.hw_motors,
+      battery_cap: droneRaw.hw_battery_cap,
+      max_speed: droneRaw.hw_max_speed,
+    },
+  } : null;
+
+  // Пытаемся взять roll/pitch из последней телеметрии
+  if (drone && droneRaw?.telemetry_history && droneRaw.telemetry_history.length > 0) {
+    const last = droneRaw.telemetry_history[0];
+    drone.roll = Number(last.roll ?? 0);
+    drone.pitch = Number(last.pitch ?? 0);
+    drone.yaw = Number(last.yaw ?? drone.heading);
+  }
+
+  const selDrone = selDroneId;;
 
   return (
     <div className="p-6 fade-up space-y-5">

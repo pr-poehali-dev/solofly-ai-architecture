@@ -1,0 +1,29 @@
+{
+  "tests": [
+    {
+      "name": "GET events",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "GET AI models",
+      "method": "GET",
+      "path": "/?type=ai",
+      "expectedStatus": 200,
+      "expectedBody": {},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "POST new event",
+      "method": "POST",
+      "path": "/",
+      "body": {"level": "info", "category": "test", "message": "Test event from API"},
+      "expectedStatus": 201,
+      "expectedBody": {},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
