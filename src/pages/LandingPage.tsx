@@ -54,24 +54,29 @@ export default function LandingPage({ onNavigate }: Props) {
           </button>
         </div>
 
-        {/* Drone SVG schematic */}
-        <div className="relative w-64 h-64 mx-auto mb-16">
-          <div className="absolute inset-0 rounded-full" style={{ border: "1px solid rgba(0,212,255,0.12)", animation: "droneSpin 20s linear infinite" }} />
-          <div className="absolute inset-4 rounded-full" style={{ border: "1px dashed rgba(0,212,255,0.08)" }} />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-20 h-20 rounded-2xl flex items-center justify-center panel-glow">
-              <Icon name="Navigation" size={40} style={{ color: "var(--electric)" }} />
+        {/* Hero image */}
+        <div className="relative max-w-2xl mx-auto mb-16">
+          <div className="absolute inset-0 rounded-2xl" style={{
+            background: "radial-gradient(ellipse at center, rgba(0,212,255,0.15) 0%, transparent 70%)",
+            filter: "blur(40px)",
+          }} />
+          <div className="relative rounded-2xl overflow-hidden panel-glow" style={{ aspectRatio: "16/9" }}>
+            <img
+              src="https://cdn.poehali.dev/projects/5ef72b5b-2023-4dff-b313-89105094219f/files/ef12817c-6954-4f4e-ab4a-34ef3b34cbd0.jpg"
+              alt="SoloFly — командный центр управления автономными дронами"
+              className="w-full h-full object-cover"
+              style={{ opacity: 0.92 }}
+            />
+            {/* HUD overlay */}
+            <div className="absolute inset-0 pointer-events-none"
+              style={{ background: "linear-gradient(to bottom, transparent 60%, rgba(5,9,14,0.7) 100%)" }} />
+            <div className="absolute bottom-4 left-4 flex items-center gap-2">
+              <span className="dot-online" />
+              <span className="text-xs font-semibold" style={{ color: "var(--signal-green)" }}>Система активна · 2 дрона в полёте</span>
             </div>
-          </div>
-          {/* Corner rotors */}
-          {["-top-2 -left-2", "-top-2 -right-2", "-bottom-2 -left-2", "-bottom-2 -right-2"].map((pos, i) => (
-            <div key={i} className={`absolute ${pos} w-8 h-8 rounded-full flex items-center justify-center`} style={{ background: "rgba(0,212,255,0.1)", border: "1px solid rgba(0,212,255,0.25)" }}>
-              <div className="w-3 h-3 rounded-full" style={{ background: "var(--electric)", boxShadow: "0 0 8px var(--electric)" }} />
+            <div className="absolute top-4 right-4">
+              <span className="tag tag-electric" style={{ fontSize: 10 }}>Live · ИИ-ядро v2.4.1</span>
             </div>
-          ))}
-          {/* Orbit dot */}
-          <div className="absolute inset-0 animate-spin" style={{ animationDuration: "4s" }}>
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full" style={{ background: "var(--signal-green)", boxShadow: "0 0 8px var(--signal-green)" }} />
           </div>
         </div>
 
