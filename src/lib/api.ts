@@ -6,6 +6,7 @@ const URLS = {
   missions:  "https://functions.poehali.dev/d2865279-6dc9-4923-871e-26325690a78c",
   telemetry: "https://functions.poehali.dev/7a62b084-e700-4e06-a220-52002779affc",
   events:    "https://functions.poehali.dev/9aa3b44f-f711-4afb-897f-610623caf2da",
+  scanning:  "https://functions.poehali.dev/8f8ffd51-a285-42f6-9148-f178ea5947c4",
 };
 
 async function req<T>(
@@ -194,6 +195,77 @@ export interface AIModelsResponse {
   avg_accuracy: number;
   total_cycles: number;
 }
+
+// ─── Scanning ─────────────────────────────────────────────────────────────────
+
+export interface ScanSession {
+  id: number;
+  code: string;
+  drone_id: string;
+  drone_name?: string;
+  scan_mode: string;
+  target_mode: string;
+  status: string;
+  range_m: number;
+  resolution_cm: number;
+  frequency_hz: number;
+  fov_deg: number;
+  coverage_pct: number;
+  area_km2: number;
+  points_total: number;
+  objects_found: number;
+  accuracy_m: number | null;
+  result_url: string | null;
+  result_size_kb: number;
+  result_format: string;
+  started_at: string | null;
+  finished_at: string | null;
+  created_at: string;
+}
+
+export interface ScanSessionsResponse {
+  sessions: ScanSession[];
+  total: number;
+  stats: Record<string, number>;
+}
+
+export interface SaveScanResult {
+  ok: boolean;
+  url: string;
+  key: string;
+  size_kb: number;
+  code: string;
+}
+
+export const scanning = {
+  getAll: (params?: { drone_id?: string; scan_mode?: string; status?: string }) => {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params || {}).filter(([, v]) => v))
+    ).toString();
+    return req<ScanSessionsResponse>("scanning", qs ? `/?${qs}` : "/");
+  },
+  getOne: (id: number) =>
+    req<{ session: ScanSession }>("scanning", `/?id=${id}`),
+  create: (data: { mode: string; drone_id: string; target_mode?: string }) =>
+    req<{ ok: boolean; id: number; code: string }>("scanning", "/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  save: (id: number, log: string[], coverage_pct = 100) =>
+    req<SaveScanResult>("scanning", "/?action=save", {
+      method: "POST",
+      body: JSON.stringify({ id, log, coverage_pct }),
+    }),
+  update: (id: number, data: Partial<Pick<ScanSession, "status" | "coverage_pct" | "points_total" | "objects_found">>) =>
+    req<{ ok: boolean }>("scanning", `/?id=${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  remove: (id: number) =>
+    req<{ ok: boolean }>("scanning", `/?id=${id}`, { method: "DELETE" }),
+};
+
+// ─── Events ───────────────────────────────────────────────────────────────────
 
 export const events = {
   getAll: (params?: { level?: string; drone_id?: string; unresolved?: boolean }) => {

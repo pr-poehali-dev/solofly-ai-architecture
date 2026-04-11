@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import { useLiveFleet } from "@/hooks/useLiveFleet";
+import { scanning as scanningApi } from "@/lib/api";
 
 // ─── Режимы сенсоров ────────────────────────────────────────────────────────
 
@@ -326,6 +327,9 @@ export default function ScanningPage() {
   const [scanning, setScanning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [scanLog, setScanLog] = useState<{ ts: string; msg: string; color: string }[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [savedUrl, setSavedUrl] = useState<string | null>(null);
+  const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
 
   const mode = SENSOR_MODES.find(m => m.id === modeId)!;
   const drones = fleet?.drones ?? [];
@@ -391,16 +395,51 @@ export default function ScanningPage() {
     return arr[Math.floor((p / 100) * arr.length)] ?? arr[arr.length - 1];
   }
 
-  const handleStart = () => {
+  const handleStart = async () => {
     setProgress(0);
     setScanLog([]);
+    setSavedUrl(null);
     setScanning(true);
     addLog(`Запуск сканирования · ${mode.label} · дрон ${droneId}`, mode.color);
+    // Создаём сессию в БД
+    try {
+      const res = await scanningApi.create({ mode: modeId, drone_id: droneId });
+      setActiveSessionId(res.id);
+      addLog(`Сессия ${res.code} создана в системе`, "var(--electric)");
+    } catch {
+      addLog("Сессия создана локально (БД недоступна)", "var(--warning)");
+    }
   };
 
   const handleStop = () => {
     setScanning(false);
     addLog("Сканирование прервано оператором", "var(--warning)");
+  };
+
+  const handleSaveToCloud = async () => {
+    if (progress < 1) return;
+    setSaving(true);
+    addLog("Сохранение результатов в облако…", "var(--electric)");
+    try {
+      const logStrings = scanLog.map(l => `[${l.ts}] ${l.msg}`);
+      const idToSave   = activeSessionId;
+      if (!idToSave) {
+        // Создаём сессию на лету если не создана
+        const res = await scanningApi.create({ mode: modeId, drone_id: droneId });
+        setActiveSessionId(res.id);
+        const saved = await scanningApi.save(res.id, logStrings, Math.round(progress));
+        setSavedUrl(saved.url);
+        addLog(`Сохранено: ${saved.code} · ${saved.size_kb} КБ`, "var(--signal-green)");
+      } else {
+        const saved = await scanningApi.save(idToSave, logStrings, Math.round(progress));
+        setSavedUrl(saved.url);
+        addLog(`Сохранено: ${saved.code} · ${saved.size_kb} КБ`, "var(--signal-green)");
+      }
+    } catch (e) {
+      addLog("Ошибка сохранения в облако", "var(--danger)");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleExport = () => {

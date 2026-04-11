@@ -5,7 +5,7 @@
       "method": "GET",
       "path": "/?id=1",
       "expectedStatus": 200,
-      "expectedBody": {},
+      "expectedBody": {"session": {"id": 1, "code": "SCN-001"}},
       "bodyMatcher": "partial"
     },
     {
@@ -13,15 +13,15 @@
       "method": "GET",
       "path": "/",
       "expectedStatus": 200,
-      "expectedBody": {},
+      "expectedBody": {"total": 5},
       "bodyMatcher": "partial"
     },
     {
-      "name": "GET non-existing session returns 404",
+      "name": "GET non-existing returns 404",
       "method": "GET",
       "path": "/?id=999999",
       "expectedStatus": 404,
-      "expectedBody": {},
+      "expectedBody": {"error": "Session not found"},
       "bodyMatcher": "partial"
     }
   ]
