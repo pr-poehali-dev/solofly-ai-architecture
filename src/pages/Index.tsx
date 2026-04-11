@@ -21,12 +21,13 @@ import UCPPage from "./UCPPage";
 import ProfilePage from "./ProfilePage";
 import PrivacyPage from "./PrivacyPage";
 import DroneConnectPage from "./DroneConnectPage";
+import DroneBuilderPage from "./DroneBuilderPage";
 
 type Page =
   | "landing" | "auth" | "dashboard" | "missions" | "flightcontrol"
   | "ai" | "swarm" | "monitoring" | "flightlog"
   | "security" | "api" | "support" | "integrations" | "scanning" | "scanarchive" | "ucp"
-  | "profile" | "privacy" | "droneconnect";
+  | "profile" | "privacy" | "droneconnect" | "dronebuilder";
 
 export default function Index() {
   const { user, loading, hasPlan, refreshUser } = useAuth();
@@ -85,13 +86,14 @@ export default function Index() {
 
   // Авторизован, но нет активной подписки → показываем только Тарифы/Профиль
   if (!hasPlan) {
-    const allowedWithoutPlan = ["pricing", "profile", "privacy", "support"];
+    const allowedWithoutPlan = ["pricing", "profile", "privacy", "support", "dronebuilder"];
     const paywallPage = allowedWithoutPlan.includes(page) ? page : "pricing";
     const renderPaywallPage = () => {
       switch (paywallPage) {
         case "profile":  return <ProfilePage />;
         case "privacy":  return <PrivacyPage />;
-        case "support":  return <SupportPage />;
+        case "support":       return <SupportPage />;
+        case "dronebuilder":  return <DroneBuilderPage />;
         default:         return <PaywallPage onSuccess={refreshUser} showCurrentPlan />;
       }
     };
@@ -125,6 +127,7 @@ export default function Index() {
       case "profile":       return <ProfilePage />;
       case "privacy":       return <PrivacyPage />;
       case "droneconnect":  return <DroneConnectPage />;
+      case "dronebuilder":  return <DroneBuilderPage />;
       case "pricing":       return <PaywallPage onSuccess={refreshUser} showCurrentPlan />;
       case "auth":          return <DashboardPage />;
       default:              return <DashboardPage />;
