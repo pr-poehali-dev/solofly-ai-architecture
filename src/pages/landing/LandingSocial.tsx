@@ -1,14 +1,7 @@
-import LandingIndustries  from "./LandingIndustries";
-import LandingOnboarding  from "./LandingOnboarding";
-import LandingAICapitan  from "./LandingAICapitan";
-import LandingAIBank     from "./LandingAIBank";
-import LandingMultiEnv   from "./LandingMultiEnv";
-import LandingBento      from "./LandingBento";
-import LandingCompare    from "./LandingCompare";
-import LandingReviews    from "./LandingReviews";
-import LandingPricing    from "./LandingPricing";
-import LandingInfo       from "./LandingInfo";
-import LandingFooter     from "./LandingFooter";
+import LandingTabs    from "./LandingTabs";
+import LandingReviews from "./LandingReviews";
+import LandingInfo    from "./LandingInfo";
+import LandingFooter  from "./LandingFooter";
 
 interface LandingSocialProps {
   onNavigate: (p: string) => void;
@@ -17,25 +10,11 @@ interface LandingSocialProps {
 export default function LandingSocial({ onNavigate }: LandingSocialProps) {
   return (
     <>
-      {/* Отраслевые решения с задачами и ROI */}
-      <LandingIndustries onNavigate={onNavigate} />
-      {/* Архитектура: AI Captain + Command Center */}
-      <LandingAICapitan onNavigate={onNavigate} />
-      {/* Банк нейросетей: YOLO11, сегментация, трекинг */}
-      <LandingAIBank />
-      {/* Мультисредовость + протоколы + оборудование */}
-      <LandingMultiEnv />
-      {/* Bento-grid возможностей */}
-      <LandingBento />
-      {/* Сравнение с конкурентами */}
-      <LandingCompare />
-      {/* Отзывы по отраслям + trust + FAQ */}
+      {/* 4 таба: Отрасли / Технологии / Конкурс / Тарифы — раскрываются по клику */}
+      <LandingTabs onNavigate={onNavigate} />
+      {/* Отзывы + trust-сигналы + FAQ — всегда видны */}
       <LandingReviews />
-      {/* Как начать: 3 шага онбординга */}
-      <LandingOnboarding onNavigate={onNavigate} />
-      {/* Тарифы */}
-      <LandingPricing onNavigate={onNavigate} />
-      {/* НИОКР + О проекте + Технология */}
+      {/* НИОКР + О проекте + Технология — всегда видны */}
       <LandingInfo />
       {/* CTA + Footer */}
       <LandingFooter onNavigate={onNavigate} />
