@@ -7,10 +7,36 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import type { SensorModeId } from "./scanningTypes";
 
+// Метаданные сессии сканирования для вшивания в экспорт
+export interface ScanMeta {
+  code?:           string;   // SCN-0042
+  drone_id?:       string;   // SF-001
+  drone_name?:     string;   // Орёл-1
+  scan_mode?:      string;   // lidar_terrain
+  sensor?:         string;   // LiDAR
+  range_m?:        number;   // 500
+  resolution_cm?:  number;   // 2
+  frequency_hz?:   number;   // 20
+  fov_deg?:        number;   // 120
+  accuracy_m?:     number;   // 0.02
+  area_km2?:       number;   // 12.5
+  points_total?:   number;   // 1875000
+  objects_found?:  number;
+  coverage_pct?:   number;
+  lat?:            number;   // координата дрона
+  lon?:            number;
+  altitude_m?:     number;
+  started_at?:     string;
+  finished_at?:    string;
+  elevation_min_m?: number;
+  elevation_max_m?: number;
+}
+
 interface ScanModel3DProps {
-  mode: SensorModeId;
-  progress?: number; // 0-100, сколько точек показывать
-  height?: number;
+  mode:      SensorModeId;
+  progress?: number;   // 0-100
+  height?:   number;
+  meta?:     ScanMeta; // реальные метаданные сессии
 }
 
 // ── Генерация облака точек для каждого режима ─────────────────────────────────
@@ -116,13 +142,70 @@ function buildPointCloud(
   return { positions, colors, count: total };
 }
 
-// ── Экспорт PLY (ASCII) ───────────────────────────────────────────────────────
-function exportPLY(mode: SensorModeId, progress: number, filename: string) {
+// ── Формирует блок метаданных для заголовков файлов ──────────────────────────
+function metaComments(prefix: string, mode: SensorModeId, progress: number, meta?: ScanMeta): string[] {
+  const now   = new Date().toISOString();
+  const lines = [
+    `${prefix} ═══════════════════════════════════════════════`,
+    `${prefix}  SoloFly Point Cloud Export`,
+    `${prefix}  Generated : ${now}`,
+    `${prefix} ───────────────────────────────────────────────`,
+    `${prefix}  SESSION`,
+    `${prefix}    Code          : ${meta?.code         ?? "—"}`,
+    `${prefix}    Status        : ${progress >= 100 ? "done" : "partial"} (${progress.toFixed(1)}%)`,
+    `${prefix}    Started       : ${meta?.started_at   ?? "—"}`,
+    `${prefix}    Finished      : ${meta?.finished_at  ?? "—"}`,
+    `${prefix} ───────────────────────────────────────────────`,
+    `${prefix}  DRONE`,
+    `${prefix}    ID            : ${meta?.drone_id     ?? "—"}`,
+    `${prefix}    Name          : ${meta?.drone_name   ?? "—"}`,
+  ];
+  if (meta?.lat != null && meta?.lon != null) {
+    lines.push(`${prefix}    Position      : ${meta.lat.toFixed(6)}°N  ${meta.lon.toFixed(6)}°E`);
+  }
+  if (meta?.altitude_m != null) {
+    lines.push(`${prefix}    Altitude      : ${meta.altitude_m} m AGL`);
+  }
+  lines.push(
+    `${prefix} ───────────────────────────────────────────────`,
+    `${prefix}  SENSOR`,
+    `${prefix}    Mode          : ${meta?.scan_mode    ?? mode}`,
+    `${prefix}    Sensor type   : ${meta?.sensor       ?? "—"}`,
+    `${prefix}    Range         : ${meta?.range_m      != null ? meta.range_m + " m" : "—"}`,
+    `${prefix}    Resolution    : ${meta?.resolution_cm != null ? meta.resolution_cm + " cm" : "—"}`,
+    `${prefix}    Frequency     : ${meta?.frequency_hz != null ? meta.frequency_hz + " Hz" : "—"}`,
+    `${prefix}    FOV           : ${meta?.fov_deg      != null ? meta.fov_deg + "°" : "—"}`,
+    `${prefix} ───────────────────────────────────────────────`,
+    `${prefix}  RESULTS`,
+    `${prefix}    Coverage      : ${meta?.coverage_pct != null ? meta.coverage_pct + "%" : progress.toFixed(1) + "%"}`,
+    `${prefix}    Area          : ${meta?.area_km2     != null ? meta.area_km2 + " km²" : "—"}`,
+    `${prefix}    Points total  : ${meta?.points_total != null ? meta.points_total.toLocaleString("en") : Math.floor(4000 * progress / 100)}`,
+    `${prefix}    Objects found : ${meta?.objects_found != null ? meta.objects_found : "—"}`,
+    `${prefix}    Accuracy      : ${meta?.accuracy_m   != null ? "±" + meta.accuracy_m + " m" : "—"}`,
+  );
+  if (meta?.elevation_min_m != null && meta?.elevation_max_m != null) {
+    lines.push(`${prefix}    Elevation     : ${meta.elevation_min_m} – ${meta.elevation_max_m} m`);
+  }
+  lines.push(
+    `${prefix} ═══════════════════════════════════════════════`,
+    `${prefix}  Open with: CloudCompare / MeshLab / Blender`,
+    `${prefix} ═══════════════════════════════════════════════`,
+  );
+  return lines;
+}
+
+// ── Экспорт PLY (ASCII с метаданными) ────────────────────────────────────────
+function exportPLY(mode: SensorModeId, progress: number, filename: string, meta?: ScanMeta) {
   const { positions, colors, count } = buildPointCloud(mode, progress);
-  const lines: string[] = [
+
+  // Комментарии PLY — каждая строка начинается с "comment"
+  const comments = metaComments("comment", mode, progress, meta)
+    .map(l => l.replace(/^comment\s*/, "comment "));
+
+  const header = [
     "ply",
     "format ascii 1.0",
-    `comment SoloFly scan export — mode: ${mode}`,
+    ...comments,
     `element vertex ${count}`,
     "property float x",
     "property float y",
@@ -132,37 +215,39 @@ function exportPLY(mode: SensorModeId, progress: number, filename: string) {
     "property uchar blue",
     "end_header",
   ];
+
+  const rows: string[] = [];
   for (let i = 0; i < count; i++) {
     const i3 = i * 3;
-    const r = Math.round(colors[i3]     * 255);
-    const g = Math.round(colors[i3 + 1] * 255);
-    const b = Math.round(colors[i3 + 2] * 255);
-    lines.push(
-      `${positions[i3].toFixed(4)} ${positions[i3 + 1].toFixed(4)} ${positions[i3 + 2].toFixed(4)} ${r} ${g} ${b}`
-    );
+    const r  = Math.round(colors[i3]     * 255);
+    const g  = Math.round(colors[i3 + 1] * 255);
+    const b  = Math.round(colors[i3 + 2] * 255);
+    rows.push(`${positions[i3].toFixed(4)} ${positions[i3+1].toFixed(4)} ${positions[i3+2].toFixed(4)} ${r} ${g} ${b}`);
   }
-  download(lines.join("\n"), filename, "text/plain");
+
+  download([...header, ...rows].join("\n"), filename, "text/plain");
 }
 
-// ── Экспорт OBJ ───────────────────────────────────────────────────────────────
-function exportOBJ(mode: SensorModeId, progress: number, filename: string) {
+// ── Экспорт OBJ (с MTL-цветами и метаданными) ────────────────────────────────
+function exportOBJ(mode: SensorModeId, progress: number, filename: string, meta?: ScanMeta) {
   const { positions, colors, count } = buildPointCloud(mode, progress);
-  const lines: string[] = [
-    `# SoloFly scan export — mode: ${mode}`,
-    `# Points: ${count}`,
-    "",
-  ];
-  // MTL inline через vertex colors в комментарии (OBJ не поддерживает vertex colors нативно,
-  // поэтому кладём цвет как расширение "# color r g b" перед каждой вершиной)
+
+  // OBJ комментарии — строки начинаются с "#"
+  const header = metaComments("#", mode, progress, meta);
+
+  header.push("", `# Vertex count: ${count}`, "");
+
+  const rows: string[] = [];
   for (let i = 0; i < count; i++) {
     const i3 = i * 3;
-    const r = colors[i3].toFixed(3);
-    const g = colors[i3 + 1].toFixed(3);
-    const b = colors[i3 + 2].toFixed(3);
-    lines.push(`# color ${r} ${g} ${b}`);
-    lines.push(`v ${positions[i3].toFixed(4)} ${positions[i3 + 1].toFixed(4)} ${positions[i3 + 2].toFixed(4)}`);
+    const r  = colors[i3].toFixed(3);
+    const g  = colors[i3 + 1].toFixed(3);
+    const b  = colors[i3 + 2].toFixed(3);
+    // CloudCompare читает "v x y z r g b" как vertex color
+    rows.push(`v ${positions[i3].toFixed(4)} ${positions[i3+1].toFixed(4)} ${positions[i3+2].toFixed(4)} ${r} ${g} ${b}`);
   }
-  download(lines.join("\n"), filename, "text/plain");
+
+  download([...header, ...rows].join("\n"), filename, "text/plain");
 }
 
 function download(content: string, filename: string, mime: string) {
@@ -175,7 +260,7 @@ function download(content: string, filename: string, mime: string) {
   URL.revokeObjectURL(url);
 }
 
-export default function ScanModel3D({ mode, progress = 100, height = 360 }: ScanModel3DProps) {
+export default function ScanModel3D({ mode, progress = 100, height = 360, meta }: ScanModel3DProps) {
   const mountRef   = useRef<HTMLDivElement>(null);
   const frameRef   = useRef<number>(0);
   const isDragging = useRef(false);
@@ -344,18 +429,18 @@ export default function ScanModel3D({ mode, progress = 100, height = 360 }: Scan
           {Math.floor(4000 * progress / 100).toLocaleString("ru-RU")} точек
         </span>
         <button
-          onClick={() => exportPLY(mode, progress, `${baseName}.ply`)}
+          onClick={() => exportPLY(mode, progress, `${baseName}.ply`, meta)}
           className="flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold transition-all"
           style={{ background: "rgba(0,212,255,0.15)", color: "var(--electric)", border: "1px solid rgba(0,212,255,0.35)" }}
-          title="Скачать облако точек в формате PLY (CloudCompare, MeshLab, Blender)"
+          title="PLY — CloudCompare, MeshLab, Blender"
         >
           ↓ PLY
         </button>
         <button
-          onClick={() => exportOBJ(mode, progress, `${baseName}.obj`)}
+          onClick={() => exportOBJ(mode, progress, `${baseName}.obj`, meta)}
           className="flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold transition-all"
           style={{ background: "rgba(0,255,136,0.12)", color: "var(--signal-green)", border: "1px solid rgba(0,255,136,0.3)" }}
-          title="Скачать в формате OBJ (3ds Max, Maya, AutoCAD)"
+          title="OBJ — 3ds Max, Maya, AutoCAD, Rhino"
         >
           ↓ OBJ
         </button>

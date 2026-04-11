@@ -5,7 +5,7 @@ import { scanning as scanningApi } from "@/lib/api";
 import { SENSOR_MODES, getScanLogMessages, type SensorModeId, type ScanLogEntry } from "./scanning/scanningTypes";
 import ScanVisualizer from "./scanning/ScanVisualizer";
 import ScanSidebar from "./scanning/ScanSidebar";
-import ScanModel3D from "./scanning/ScanModel3D";
+import ScanModel3D, { type ScanMeta } from "./scanning/ScanModel3D";
 
 export default function ScanningPage({ onNavigate }: { onNavigate?: (page: string) => void } = {}) {
   const { data: fleet } = useLiveFleet(5000);
@@ -33,7 +33,24 @@ export default function ScanningPage({ onNavigate }: { onNavigate?: (page: strin
   useEffect(() => { droneIdRef.current = droneId; }, [droneId]);
 
   const mode = SENSOR_MODES.find(m => m.id === modeId)!;
-  const drones = fleet?.drones ?? [];
+  const drones     = fleet?.drones ?? [];
+  const activeDrone = drones.find(d => d.id === droneId);
+
+  // Собираем meta для экспорта из текущих данных
+  const scanMeta: ScanMeta = {
+    drone_id:       droneId,
+    drone_name:     activeDrone?.name,
+    scan_mode:      mode.id,
+    sensor:         mode.sensor,
+    range_m:        mode.range_m,
+    resolution_cm:  mode.resolution_cm,
+    frequency_hz:   mode.freq_hz,
+    fov_deg:        mode.fov_deg,
+    coverage_pct:   Math.round(progress),
+    lat:            activeDrone?.lat  != null ? Number(activeDrone.lat)  : undefined,
+    lon:            activeDrone?.lon  != null ? Number(activeDrone.lon)  : undefined,
+    altitude_m:     activeDrone?.altitude != null ? Number(activeDrone.altitude) : undefined,
+  };
 
   // Симуляция прогресса скана
   useEffect(() => {
@@ -310,7 +327,7 @@ export default function ScanningPage({ onNavigate }: { onNavigate?: (page: strin
           {/* Canvas / 3D */}
           <div className="flex-1 relative" style={{ minHeight: 280, background: "hsl(210 25% 4%)" }}>
             {view3D && progress > 0
-              ? <ScanModel3D mode={modeId} progress={progress} height={320} />
+              ? <ScanModel3D mode={modeId} progress={progress} height={320} meta={scanMeta} />
               : <ScanVisualizer modeId={modeId} active={scanning} progress={progress} />
             }
 

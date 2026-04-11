@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { MODE_LABEL, fmtDate, fmtDur, fmtNum, type ScanResultJson } from "./archiveTypes";
-import ScanModel3D from "@/pages/scanning/ScanModel3D";
+import ScanModel3D, { type ScanMeta } from "@/pages/scanning/ScanModel3D";
 import type { SensorModeId } from "@/pages/scanning/scanningTypes";
 
 interface FileViewerProps {
@@ -83,6 +83,24 @@ export default function FileViewer({ url, onClose }: FileViewerProps) {
                     mode={(data.session.scan_mode as SensorModeId) ?? "lidar_terrain"}
                     progress={data.results.coverage_pct ?? 100}
                     height={380}
+                    meta={{
+                      code:           data.session.code,
+                      drone_id:       data.session.drone_id,
+                      drone_name:     data.session.drone_name,
+                      scan_mode:      data.session.scan_mode,
+                      sensor:         data.session.sensor,
+                      range_m:        data.session.range_m,
+                      resolution_cm:  data.session.resolution_cm,
+                      frequency_hz:   data.session.frequency_hz,
+                      fov_deg:        data.session.fov_deg,
+                      accuracy_m:     data.results.accuracy_m,
+                      area_km2:       data.results.area_km2,
+                      points_total:   data.results.points_total,
+                      objects_found:  data.results.objects_found,
+                      coverage_pct:   data.results.coverage_pct,
+                      started_at:     data.results.started_at,
+                      finished_at:    data.results.finished_at,
+                    } satisfies ScanMeta}
                   />
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     {[
