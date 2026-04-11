@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import { useLiveFleet } from "@/hooks/useLiveFleet";
 import LiveMap, { type MapDrone } from "@/components/LiveMap";
 import { fleet } from "@/lib/api";
+import AIExplainPanel from "@/components/AIExplainPanel";
 
 const maneuvers = [
   { id: "hover", label: "Зависание", icon: "Pause" },
@@ -19,6 +20,7 @@ export default function FlightControlPage() {
   const [activeManeuver, setActiveManeuver] = useState<string | null>(null);
   const [cmdLoading, setCmdLoading] = useState(false);
   const [cmdResult, setCmdResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [explainManeuver, setExplainManeuver] = useState<string | null>(null);
   const [operatorPos, setOperatorPos] = useState<{ lat: number; lon: number } | null>(null);
   const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "ok" | "denied">("idle");
   const [distanceToDrone, setDistanceToDrone] = useState<number | null>(null);
@@ -332,30 +334,59 @@ export default function FlightControlPage() {
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {maneuvers.map(m => (
-            <button
-              key={m.id}
-              onClick={() => sendManeuver(m.id)}
-              disabled={cmdLoading}
-              className={`p-4 rounded-xl flex flex-col items-center gap-2 transition-all text-center ${activeManeuver === m.id ? "panel-glow" : "panel hover:border-[rgba(0,212,255,0.2)]"}`}
-              style={{
-                ...(activeManeuver === m.id ? { borderColor: "rgba(0,212,255,0.4)" } : {}),
-                opacity: cmdLoading ? 0.6 : 1,
-              }}
-            >
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: activeManeuver === m.id ? "rgba(0,212,255,0.15)" : "hsl(var(--input))" }}>
-                <Icon
-                  name={cmdLoading && activeManeuver === m.id ? "Loader" : m.icon}
-                  fallback="Navigation"
-                  size={18}
-                  className={cmdLoading && activeManeuver === m.id ? "animate-spin" : ""}
-                  style={{ color: activeManeuver === m.id ? "var(--electric)" : "hsl(var(--muted-foreground))" }}
-                />
-              </div>
-              <span className="text-xs font-medium">{m.label}</span>
-              {activeManeuver === m.id && <span className="tag tag-green" style={{ fontSize: 9 }}>Активен</span>}
-            </button>
+            <div key={m.id} className="relative group">
+              <button
+                onClick={() => sendManeuver(m.id)}
+                disabled={cmdLoading}
+                className={`w-full p-4 rounded-xl flex flex-col items-center gap-2 transition-all text-center ${activeManeuver === m.id ? "panel-glow" : "panel hover:border-[rgba(0,212,255,0.2)]"}`}
+                style={{
+                  ...(activeManeuver === m.id ? { borderColor: "rgba(0,212,255,0.4)" } : {}),
+                  opacity: cmdLoading ? 0.6 : 1,
+                }}
+              >
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: activeManeuver === m.id ? "rgba(0,212,255,0.15)" : "hsl(var(--input))" }}>
+                  <Icon
+                    name={cmdLoading && activeManeuver === m.id ? "Loader" : m.icon}
+                    fallback="Navigation"
+                    size={18}
+                    className={cmdLoading && activeManeuver === m.id ? "animate-spin" : ""}
+                    style={{ color: activeManeuver === m.id ? "var(--electric)" : "hsl(var(--muted-foreground))" }}
+                  />
+                </div>
+                <span className="text-xs font-medium">{m.label}</span>
+                {activeManeuver === m.id && <span className="tag tag-green" style={{ fontSize: 9 }}>Активен</span>}
+              </button>
+              {/* Кнопка «Почему?» — появляется при hover или если манёвр активен */}
+              <button
+                onClick={() => setExplainManeuver(explainManeuver === m.id ? null : m.id)}
+                className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex items-center justify-center text-xs font-bold"
+                style={{
+                  width: 20, height: 20,
+                  background: explainManeuver === m.id ? "var(--electric)" : "rgba(0,212,255,0.2)",
+                  color: explainManeuver === m.id ? "#000" : "var(--electric)",
+                  border: "1px solid rgba(0,212,255,0.4)",
+                  opacity: activeManeuver === m.id || explainManeuver === m.id ? 1 : undefined,
+                }}
+                title="Почему ИИ выбрал этот манёвр?"
+              >
+                ?
+              </button>
+            </div>
           ))}
         </div>
+
+        {/* Панель объяснения ИИ */}
+        {explainManeuver && (
+          <div className="mt-4">
+            <AIExplainPanel
+              droneId={selDroneId}
+              maneuver={explainManeuver}
+              label={maneuvers.find(m => m.id === explainManeuver)?.label ?? explainManeuver}
+              onClose={() => setExplainManeuver(null)}
+            />
+          </div>
+        )}
+
         {activeManeuver === "land" && (
           <div className="mt-4 p-4 rounded-xl" style={{ background: "rgba(255,59,48,0.08)", border: "1px solid rgba(255,59,48,0.2)" }}>
             <div className="flex items-center gap-2 text-sm font-semibold mb-1" style={{ color: "var(--danger)" }}>

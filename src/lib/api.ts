@@ -254,6 +254,24 @@ export interface AIModelsResponse {
   total_cycles: number;
 }
 
+export interface ExplainFactor {
+  label: string;
+  val:   string;
+  ok:    boolean;
+}
+
+export interface ExplainResponse {
+  maneuver:      string;
+  drone_id:      string;
+  model:         string;
+  trigger:       string;
+  factors:       ExplainFactor[];
+  alternatives:  string[];
+  recent_events: { level: string; category: string; message: string; ts: string }[];
+  confidence:    number;
+  decision_ms:   number;
+}
+
 // ─── Scanning ─────────────────────────────────────────────────────────────────
 
 export interface ScanSession {
@@ -348,4 +366,6 @@ export const events = {
       method: "PATCH",
       body: JSON.stringify({ resolved: true }),
     }),
+  explain: (drone_id: string, maneuver: string) =>
+    req<ExplainResponse>("events", `/?type=explain&drone_id=${encodeURIComponent(drone_id)}&maneuver=${encodeURIComponent(maneuver)}`),
 };

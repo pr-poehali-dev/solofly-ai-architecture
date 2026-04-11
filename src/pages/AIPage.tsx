@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import Icon from "@/components/ui/icon";
 import { events } from "@/lib/api";
+import { useLiveFleet } from "@/hooks/useLiveFleet";
+import AIExplainPanel from "@/components/AIExplainPanel";
 
 const FRAMEWORK_MAP: Record<string, string> = {
   "PathNet":     "PyTorch",
@@ -51,10 +53,14 @@ const rlLog = [
   { ep: 1243, reward: 93.2, improvement: "+0.0", method: "SAC", note: "Без изменений — стабилизация" },
 ];
 
-type TabType = "models" | "vision" | "rl" | "transfer" | "online";
+type TabType = "models" | "vision" | "rl" | "transfer" | "online" | "explain";
 
 export default function AIPage() {
   const [tab, setTab] = useState<TabType>("models");
+  const [explainManeuver, setExplainManeuver] = useState("hover");
+  const { data: fleet } = useLiveFleet(0);
+  const firstDroneId = fleet?.drones?.[0]?.id ?? "SF-001";
+
   const [aiData, setAiData] = useState<{
     models: { id: number; name: string; accuracy: number; cycles: number; updated_at: string }[];
     avg_accuracy: number;
@@ -132,11 +138,12 @@ export default function AIPage() {
       {/* Tabs */}
       <div className="flex gap-1 overflow-x-auto" style={{ background: "hsl(var(--input))", borderRadius: 10, padding: 4, width: "fit-content" }}>
         {([
-          { key: "models", label: "Модели" },
-          { key: "vision", label: "Зрение (3.3)" },
-          { key: "rl", label: "RL Обучение (3.5)" },
+          { key: "models",   label: "Модели" },
+          { key: "vision",   label: "Зрение (3.3)" },
+          { key: "rl",       label: "RL Обучение (3.5)" },
           { key: "transfer", label: "SIM→REAL" },
-          { key: "online", label: "Онлайн-адаптация" },
+          { key: "online",   label: "Онлайн-адаптация" },
+          { key: "explain",  label: "🔍 Объяснения" },
         ] as { key: TabType; label: string }[]).map(t => (
           <button
             key={t.key}
@@ -382,6 +389,95 @@ export default function AIPage() {
               <div className="hud-label mb-1">Консистентность моделей</div>
               <div className="text-xs text-muted-foreground">Все обновления проходят shadow-testing на симуляторе перед деплоем на борт.</div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- ОБЪЯСНЕНИЯ ИИ --- */}
+      {tab === "explain" && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          {/* Левая панель: выбор дрона и манёвра */}
+          <div className="space-y-4">
+            <div className="panel rounded-xl p-5">
+              <h2 className="font-semibold text-sm mb-4 flex items-center gap-2">
+                <Icon name="Brain" size={14} style={{ color: "var(--electric)" }} />
+                Объяснимый ИИ
+              </h2>
+              <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                Выбери манёвр — и ИИ объяснит, какие факторы повлияли на решение,
+                какая модель его приняла и какие альтернативы были отклонены.
+              </p>
+
+              <div className="mb-4">
+                <div className="hud-label mb-2">Дрон</div>
+                <select
+                  className="w-full px-3 py-2 rounded-lg text-xs"
+                  style={{ background: "hsl(var(--input))", border: "1px solid hsl(var(--border))", color: "hsl(var(--foreground))" }}
+                  defaultValue={firstDroneId}
+                  disabled
+                >
+                  <option>{firstDroneId}</option>
+                </select>
+              </div>
+
+              <div className="hud-label mb-2">Манёвр для анализа</div>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: "hover",  label: "Зависание",       icon: "Pause" },
+                  { id: "orbit",  label: "Облёт",            icon: "RefreshCw" },
+                  { id: "land",   label: "Посадка",          icon: "ArrowDown" },
+                  { id: "rtb",    label: "Возврат на базу",  icon: "Home" },
+                  { id: "climb",  label: "Набор высоты",     icon: "TrendingUp" },
+                  { id: "scan",   label: "Скан-паттерн",     icon: "Scan" },
+                ].map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => setExplainManeuver(m.id)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all"
+                    style={explainManeuver === m.id
+                      ? { background: "rgba(0,212,255,0.15)", color: "var(--electric)", border: "1px solid rgba(0,212,255,0.4)" }
+                      : { background: "hsl(var(--input))", color: "hsl(var(--muted-foreground))" }
+                    }
+                  >
+                    <Icon name={m.icon} fallback="Navigation" size={12} />
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Принципы XAI */}
+            <div className="panel rounded-xl p-5">
+              <div className="hud-label mb-3">Принципы объяснимости</div>
+              <div className="space-y-2">
+                {[
+                  { icon: "Eye",         text: "Все решения логируются в БД" },
+                  { icon: "GitBranch",   text: "Показываем отклонённые альтернативы" },
+                  { icon: "BarChart2",   text: "Факторы взвешены по важности" },
+                  { icon: "Clock",       text: "Время принятия решения < 15 мс" },
+                ].map(p => (
+                  <div key={p.text} className="flex items-center gap-2 text-xs">
+                    <Icon name={p.icon} fallback="Check" size={12} style={{ color: "var(--electric)", flexShrink: 0 }} />
+                    <span className="text-muted-foreground">{p.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Правая панель: живое объяснение */}
+          <div className="lg:col-span-2">
+            <AIExplainPanel
+              key={`${firstDroneId}-${explainManeuver}`}
+              droneId={firstDroneId}
+              maneuver={explainManeuver}
+              label={[
+                { id: "hover", label: "Зависание" }, { id: "orbit", label: "Облёт объекта" },
+                { id: "land",  label: "Безопасная посадка" }, { id: "rtb", label: "Возврат на базу" },
+                { id: "climb", label: "Набор высоты" }, { id: "scan", label: "Скан-паттерн" },
+              ].find(m => m.id === explainManeuver)?.label ?? explainManeuver}
+              onClose={() => {}}
+            />
           </div>
         </div>
       )}

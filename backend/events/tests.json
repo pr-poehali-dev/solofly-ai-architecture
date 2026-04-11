@@ -17,6 +17,14 @@
       "bodyMatcher": "partial"
     },
     {
+      "name": "GET explain hover",
+      "method": "GET",
+      "path": "/?type=explain&drone_id=SF-001&maneuver=hover",
+      "expectedStatus": 200,
+      "expectedBody": {},
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "POST new event",
       "method": "POST",
       "path": "/",
