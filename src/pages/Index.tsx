@@ -83,9 +83,26 @@ export default function Index() {
     return <AuthPage onSuccess={() => setPage("dashboard")} />;
   }
 
-  // Авторизован, но нет активной подписки → Paywall
+  // Авторизован, но нет активной подписки → показываем только Тарифы/Профиль
   if (!hasPlan) {
-    return <PaywallPage onSuccess={refreshUser} />;
+    const allowedWithoutPlan = ["pricing", "profile", "privacy", "support"];
+    const paywallPage = allowedWithoutPlan.includes(page) ? page : "pricing";
+    const renderPaywallPage = () => {
+      switch (paywallPage) {
+        case "profile":  return <ProfilePage />;
+        case "privacy":  return <PrivacyPage />;
+        case "support":  return <SupportPage />;
+        default:         return <PaywallPage onSuccess={refreshUser} showCurrentPlan />;
+      }
+    };
+    return (
+      <Layout currentPage={paywallPage} onNavigate={p => {
+        if (allowedWithoutPlan.includes(p)) setPage(p as typeof page);
+        else setPage("pricing" as typeof page);
+      }}>
+        {renderPaywallPage()}
+      </Layout>
+    );
   }
 
   const renderPage = () => {
