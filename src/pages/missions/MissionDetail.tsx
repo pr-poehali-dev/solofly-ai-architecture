@@ -119,6 +119,29 @@ export default function MissionDetail({
                 <span className="hud-value">{sel.waypoints}</span>
               </div>
             </div>
+
+            {/* Точки маршрута с высотами */}
+            {(sel as Mission & { waypoints_json?: { lat: number; lon: number; action?: string | null; altitude?: number | null }[] }).waypoints_json?.length ? (
+              <div>
+                <div className="hud-label mb-2 flex items-center gap-1.5">
+                  <Icon name="MoveVertical" size={11} style={{ color: "var(--electric)" }} />
+                  Точки маршрута и эшелоны
+                </div>
+                <div className="space-y-1 max-h-36 overflow-y-auto">
+                  {(sel as Mission & { waypoints_json?: { lat: number; lon: number; action?: string | null; altitude?: number | null }[] }).waypoints_json!.map((wp, i) => (
+                    <div key={i} className="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs" style={{ background: "hsl(var(--input))" }}>
+                      <span className="text-muted-foreground">#{i + 1}</span>
+                      <span style={{ color: "var(--electric)" }}>{wp.lat.toFixed(5)}, {wp.lon.toFixed(5)}</span>
+                      {wp.action && <span className="tag tag-electric">{wp.action}</span>}
+                      {wp.altitude
+                        ? <span className="font-semibold" style={{ color: "var(--signal-green)" }}>{wp.altitude} м</span>
+                        : <span className="text-muted-foreground">— м</span>
+                      }
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
 

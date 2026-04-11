@@ -20,11 +20,11 @@ export default function MissionsPage() {
   const [wps, setWps]                     = useState<Waypoint[]>([]);
   const [formLoading, setFormLoading]     = useState(false);
   const [formError, setFormError]         = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", drone_id: "", type: "patrol" });
+  const [form, setForm] = useState({ name: "", drone_id: "", type: "patrol", defaultAltitude: null as number | null });
 
   const openBuilder = () => {
     setWps([]);
-    setForm({ name: "", drone_id: "", type: "patrol" });
+    setForm({ name: "", drone_id: "", type: "patrol", defaultAltitude: null });
     setFormError(null);
     setBuilderStep("route");
     setShowBuilder(true);
@@ -45,8 +45,14 @@ export default function MissionsPage() {
         drone_id:       form.drone_id,
         type:           form.type,
         waypoints:      wps.length,
-        waypoints_json: wps.map(w => ({ lat: w.lat, lon: w.lon, action: w.action ?? null })),
-        tasks:          wps.filter(w => w.action).map(w => w.action!),
+        waypoints_json: wps.map(w => ({
+          lat:      w.lat,
+          lon:      w.lon,
+          action:   w.action ?? null,
+          altitude: w.altitude ?? form.defaultAltitude ?? null,
+        })),
+        tasks:      wps.filter(w => w.action).map(w => w.action!),
+        altitude_m: form.defaultAltitude ?? 60,
       });
       setShowBuilder(false);
       await refresh();

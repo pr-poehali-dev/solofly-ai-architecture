@@ -1,10 +1,13 @@
 // ─── Типы и константы редактора маршрута ──────────────────────────────────────
 
 export interface Waypoint {
-  lat: number;
-  lon: number;
-  action?: string; // "hover" | "photo" | "scan" | ""
+  lat:      number;
+  lon:      number;
+  action?:  string;  // "hover" | "photo" | "scan" | ""
+  altitude?: number; // метры над землёй (AGL)
 }
+
+export const ALTITUDE_PRESETS = [30, 60, 90, 120] as const;
 
 export interface WaypointEditorProps {
   waypoints: Waypoint[];

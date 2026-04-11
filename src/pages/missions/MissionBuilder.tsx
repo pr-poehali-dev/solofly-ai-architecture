@@ -2,14 +2,15 @@ import Icon from "@/components/ui/icon";
 import WaypointEditor, { type Waypoint } from "@/components/map/WaypointEditor";
 import type { Drone } from "@/lib/api";
 import { typeIcon, typeName } from "./missionsTypes";
+import { ALTITUDE_PRESETS } from "@/components/map/waypointTypes";
 
 interface MissionBuilderProps {
   builderStep:    "route" | "details";
   setBuilderStep: (step: "route" | "details") => void;
   wps:            Waypoint[];
   setWps:         (wps: Waypoint[]) => void;
-  form:           { name: string; drone_id: string; type: string };
-  setForm:        (updater: (f: { name: string; drone_id: string; type: string }) => { name: string; drone_id: string; type: string }) => void;
+  form:           { name: string; drone_id: string; type: string; defaultAltitude: number | null };
+  setForm:        (updater: (f: { name: string; drone_id: string; type: string; defaultAltitude: number | null }) => { name: string; drone_id: string; type: string; defaultAltitude: number | null }) => void;
   formLoading:    boolean;
   formError:      string | null;
   drones:         Drone[];
@@ -177,6 +178,49 @@ export default function MissionBuilder({
               </div>
             </div>
 
+            {/* Воздушный эшелон */}
+            <div>
+              <label className="hud-label block mb-1.5 flex items-center gap-1.5">
+                <Icon name="MoveVertical" size={11} style={{ color: "var(--electric)" }} />
+                Воздушный эшелон (высота по умолчанию)
+              </label>
+              <div className="grid grid-cols-4 gap-1.5 mb-2">
+                {ALTITUDE_PRESETS.map(alt => (
+                  <button
+                    key={alt}
+                    onClick={() => setForm(f => ({ ...f, defaultAltitude: f.defaultAltitude === alt ? null : alt }))}
+                    className="py-2 rounded-lg text-xs font-semibold transition-all"
+                    style={form.defaultAltitude === alt
+                      ? { background: "rgba(0,255,136,0.15)", color: "var(--signal-green)", border: "1px solid rgba(0,255,136,0.4)" }
+                      : { background: "hsl(var(--input))", color: "hsl(var(--muted-foreground))", border: "1px solid transparent" }
+                    }
+                  >
+                    {alt}м
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="hud-label">Или вручную:</span>
+                <input
+                  type="number"
+                  min={10}
+                  max={500}
+                  step={10}
+                  placeholder="м"
+                  value={form.defaultAltitude ?? ""}
+                  onChange={e => setForm(f => ({ ...f, defaultAltitude: e.target.value === "" ? null : Number(e.target.value) }))}
+                  className="w-20 px-2 py-1.5 rounded-lg text-xs text-center"
+                  style={{ background: "hsl(var(--input))", border: "1px solid hsl(var(--border))", color: "hsl(var(--foreground))" }}
+                />
+                <span className="text-xs text-muted-foreground">AGL</span>
+              </div>
+              {form.defaultAltitude && (
+                <p className="text-xs mt-1.5" style={{ color: "hsl(var(--muted-foreground))" }}>
+                  Применяется ко всем точкам без индивидуальной высоты
+                </p>
+              )}
+            </div>
+
             {/* Сводка маршрута */}
             <div className="panel rounded-xl p-3 space-y-2">
               <div className="hud-label">Сводка маршрута</div>
@@ -187,6 +231,17 @@ export default function MissionBuilder({
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">С действиями</span>
                 <span className="hud-value">{wps.filter(w => w.action).length}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Высота задана</span>
+                <span className="hud-value">
+                  {wps.filter(w => w.altitude).length > 0
+                    ? `${wps.filter(w => w.altitude).length} точек`
+                    : form.defaultAltitude
+                      ? `${form.defaultAltitude}м (глобально)`
+                      : <span style={{ color: "var(--danger)" }}>не задана</span>
+                  }
+                </span>
               </div>
             </div>
 
