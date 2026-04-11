@@ -4,6 +4,7 @@ import { useMissions } from "@/hooks/useMissions";
 import { useLiveFleet } from "@/hooks/useLiveFleet";
 import { missions as missionsApi } from "@/lib/api";
 import type { Mission } from "@/lib/api";
+import WaypointEditor, { type Waypoint } from "@/components/map/WaypointEditor";
 
 const typeIcon: Record<string, string> = {
   patrol: "Shield", mapping: "Map", inspection: "Search",
@@ -39,16 +40,21 @@ export default function MissionsPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [tab, setTab] = useState<TabType>("map");
 
-  // Форма создания миссии
-  const [showForm, setShowForm] = useState(false);
+  // Конструктор миссии
+  const [showBuilder, setShowBuilder] = useState(false);
+  const [builderStep, setBuilderStep] = useState<"route" | "details">("route");
+  const [wps, setWps]                 = useState<Waypoint[]>([]);
   const [formLoading, setFormLoading] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    name: "",
-    drone_id: "",
-    type: "patrol",
-    waypoints: 8,
-  });
+  const [formError, setFormError]     = useState<string | null>(null);
+  const [form, setForm] = useState({ name: "", drone_id: "", type: "patrol" });
+
+  const openBuilder = () => {
+    setWps([]);
+    setForm({ name: "", drone_id: "", type: "patrol" });
+    setFormError(null);
+    setBuilderStep("route");
+    setShowBuilder(true);
+  };
 
   const handleCreate = async () => {
     if (!form.name.trim() || !form.drone_id) {
@@ -61,13 +67,13 @@ export default function MissionsPage() {
       const code = `MSN-${String(Date.now()).slice(-3)}`;
       await missionsApi.create({
         code,
-        name:     form.name.trim(),
-        drone_id: form.drone_id,
-        type:     form.type,
-        waypoints: form.waypoints,
+        name:      form.name.trim(),
+        drone_id:  form.drone_id,
+        type:      form.type,
+        waypoints: wps.length,
+        tasks:     wps.filter(w => w.action).map(w => w.action!),
       });
-      setShowForm(false);
-      setForm({ name: "", drone_id: "", type: "patrol", waypoints: 8 });
+      setShowBuilder(false);
       await refresh();
     } catch {
       setFormError("Ошибка при создании миссии");
@@ -104,7 +110,7 @@ export default function MissionsPage() {
           </p>
         </div>
         <button
-          onClick={() => { setShowForm(true); setFormError(null); }}
+          onClick={openBuilder}
           className="btn-electric px-4 py-2 rounded-lg text-xs flex items-center gap-2"
         >
           <Icon name="Plus" size={13} />
@@ -112,94 +118,183 @@ export default function MissionsPage() {
         </button>
       </div>
 
-      {/* Форма создания миссии */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
-          <div className="panel rounded-2xl p-6 w-full max-w-md space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-bold text-base">Новая миссия</h2>
-              <button onClick={() => setShowForm(false)} className="btn-ghost p-1.5 rounded-lg">
-                <Icon name="X" size={16} />
-              </button>
+      {/* ── Конструктор миссии (полный экран) ── */}
+      {showBuilder && (
+        <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "hsl(var(--background))" }}>
+          {/* Шапка конструктора */}
+          <div className="flex items-center justify-between px-6 py-3 shrink-0"
+            style={{ borderBottom: "1px solid hsl(var(--border))" }}>
+            <div className="flex items-center gap-3">
+              <Icon name="MapPin" size={16} style={{ color: "var(--electric)" }} />
+              <span className="font-bold">Конструктор миссии</span>
+              {/* Шаги */}
+              <div className="flex items-center gap-1 ml-4">
+                {(["route", "details"] as const).map((step, i) => (
+                  <div key={step} className="flex items-center gap-1">
+                    <button
+                      onClick={() => builderStep === "details" && step === "route" && setBuilderStep("route")}
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs transition-all"
+                      style={builderStep === step
+                        ? { background: "rgba(0,212,255,0.15)", color: "var(--electric)", border: "1px solid rgba(0,212,255,0.4)" }
+                        : { color: "hsl(var(--muted-foreground))" }
+                      }
+                    >
+                      <span className="w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold"
+                        style={{ background: builderStep === step ? "var(--electric)" : "hsl(var(--input))", color: builderStep === step ? "#000" : undefined }}>
+                        {i + 1}
+                      </span>
+                      {step === "route" ? "Маршрут" : "Параметры"}
+                    </button>
+                    {i === 0 && <Icon name="ChevronRight" size={12} style={{ color: "hsl(var(--muted-foreground))" }} />}
+                  </div>
+                ))}
+              </div>
             </div>
+            <button onClick={() => setShowBuilder(false)} className="btn-ghost p-2 rounded-lg">
+              <Icon name="X" size={16} />
+            </button>
+          </div>
 
-            <div className="space-y-3">
-              <div>
-                <label className="hud-label block mb-1.5">Название миссии</label>
-                <input
-                  className="w-full px-3 py-2 rounded-lg text-sm"
-                  style={{ background: "hsl(var(--input))", border: "1px solid hsl(var(--border))", color: "hsl(var(--foreground))" }}
-                  placeholder="Патруль периметра Б"
-                  value={form.name}
-                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+          {/* Шаг 1: Карта с редактором маршрута */}
+          {builderStep === "route" && (
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <WaypointEditor
+                waypoints={wps}
+                onChange={setWps}
+                height={undefined}
+                initialCenter={
+                  fleet?.drones?.[0]?.lat
+                    ? { lat: Number(fleet.drones[0].lat), lon: Number(fleet.drones[0].lon) }
+                    : undefined
+                }
+              />
+              <div className="shrink-0 flex items-center justify-between px-6 py-3"
+                style={{ borderTop: "1px solid hsl(var(--border))" }}>
+                <span className="text-xs text-muted-foreground">
+                  {wps.length === 0
+                    ? "Кликни по карте чтобы добавить первую точку маршрута"
+                    : `${wps.length} точек добавлено`}
+                </span>
+                <div className="flex gap-2">
+                  <button onClick={() => setShowBuilder(false)} className="btn-ghost px-4 py-2 rounded-lg text-xs">
+                    Отмена
+                  </button>
+                  <button
+                    onClick={() => { setBuilderStep("details"); setFormError(null); }}
+                    disabled={wps.length < 2}
+                    className="btn-electric px-4 py-2 rounded-lg text-xs flex items-center gap-2"
+                    style={{ opacity: wps.length < 2 ? 0.5 : 1 }}
+                  >
+                    Далее — параметры <Icon name="ChevronRight" size={13} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Шаг 2: Параметры миссии */}
+          {builderStep === "details" && (
+            <div className="flex-1 flex overflow-hidden">
+              {/* Превью маршрута (слева) */}
+              <div className="flex-1 overflow-hidden">
+                <WaypointEditor
+                  waypoints={wps}
+                  onChange={setWps}
+                  height={undefined}
                 />
               </div>
 
-              <div>
-                <label className="hud-label block mb-1.5">Дрон</label>
-                <select
-                  className="w-full px-3 py-2 rounded-lg text-sm"
-                  style={{ background: "hsl(var(--input))", border: "1px solid hsl(var(--border))", color: "hsl(var(--foreground))" }}
-                  value={form.drone_id}
-                  onChange={e => setForm(f => ({ ...f, drone_id: e.target.value }))}
-                >
-                  <option value="">Выбери дрон</option>
-                  {(fleet?.drones ?? []).map(d => (
-                    <option key={d.id} value={d.id}>{d.name} ({d.status})</option>
-                  ))}
-                </select>
-              </div>
+              {/* Форма параметров (справа) */}
+              <div className="w-80 shrink-0 flex flex-col p-6 space-y-4 overflow-y-auto"
+                style={{ borderLeft: "1px solid hsl(var(--border))" }}>
+                <h2 className="font-bold text-sm">Параметры миссии</h2>
 
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="hud-label block mb-1.5">Тип миссии</label>
+                  <label className="hud-label block mb-1.5">Название</label>
+                  <input
+                    className="w-full px-3 py-2 rounded-lg text-sm"
+                    style={{ background: "hsl(var(--input))", border: "1px solid hsl(var(--border))", color: "hsl(var(--foreground))" }}
+                    placeholder="Патруль периметра Б"
+                    value={form.name}
+                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="hud-label block mb-1.5">Дрон-исполнитель</label>
                   <select
                     className="w-full px-3 py-2 rounded-lg text-sm"
                     style={{ background: "hsl(var(--input))", border: "1px solid hsl(var(--border))", color: "hsl(var(--foreground))" }}
-                    value={form.type}
-                    onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
+                    value={form.drone_id}
+                    onChange={e => setForm(f => ({ ...f, drone_id: e.target.value }))}
                   >
-                    {Object.entries(typeName).map(([k, v]) => (
-                      <option key={k} value={k}>{v}</option>
+                    <option value="">Выбери дрон</option>
+                    {(fleet?.drones ?? []).map(d => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} · {d.status === "standby" ? "Готов" : d.status === "flight" ? "В полёте" : d.status} · {d.battery}%
+                      </option>
                     ))}
                   </select>
                 </div>
+
                 <div>
-                  <label className="hud-label block mb-1.5">Точек маршрута</label>
-                  <input
-                    type="number" min={2} max={50}
-                    className="w-full px-3 py-2 rounded-lg text-sm"
-                    style={{ background: "hsl(var(--input))", border: "1px solid hsl(var(--border))", color: "hsl(var(--foreground))" }}
-                    value={form.waypoints}
-                    onChange={e => setForm(f => ({ ...f, waypoints: Number(e.target.value) }))}
-                  />
+                  <label className="hud-label block mb-1.5">Тип миссии</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(typeName).map(([k, v]) => (
+                      <button
+                        key={k}
+                        onClick={() => setForm(f => ({ ...f, type: k }))}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all"
+                        style={form.type === k
+                          ? { background: "rgba(0,212,255,0.12)", color: "var(--electric)", border: "1px solid rgba(0,212,255,0.35)" }
+                          : { background: "hsl(var(--input))", color: "hsl(var(--muted-foreground))" }
+                        }
+                      >
+                        <Icon name={typeIcon[k] ?? "Navigation"} fallback="Navigation" size={12} />
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Сводка маршрута */}
+                <div className="panel rounded-xl p-3 space-y-2">
+                  <div className="hud-label">Сводка маршрута</div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Точек</span>
+                    <span className="hud-value">{wps.length}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">С действиями</span>
+                    <span className="hud-value">{wps.filter(w => w.action).length}</span>
+                  </div>
+                </div>
+
+                {formError && (
+                  <div className="text-xs px-3 py-2 rounded-lg" style={{ background: "rgba(255,59,48,0.1)", color: "var(--danger)" }}>
+                    {formError}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2 pt-2">
+                  <button
+                    onClick={handleCreate}
+                    disabled={formLoading}
+                    className="btn-electric py-2.5 rounded-lg text-xs flex items-center justify-center gap-2 font-semibold"
+                  >
+                    {formLoading
+                      ? <><Icon name="Loader" size={13} className="animate-spin" /> Создаём…</>
+                      : <><Icon name="CheckCircle" size={13} /> Создать миссию</>
+                    }
+                  </button>
+                  <button onClick={() => setBuilderStep("route")} className="btn-ghost py-2 rounded-lg text-xs">
+                    ← Назад к маршруту
+                  </button>
                 </div>
               </div>
             </div>
-
-            {formError && (
-              <div className="text-xs px-3 py-2 rounded-lg" style={{ background: "rgba(255,59,48,0.1)", color: "var(--danger)" }}>
-                {formError}
-              </div>
-            )}
-
-            <div className="flex gap-2 pt-1">
-              <button onClick={() => setShowForm(false)} className="flex-1 btn-ghost py-2 rounded-lg text-xs">
-                Отмена
-              </button>
-              <button
-                onClick={handleCreate}
-                disabled={formLoading}
-                className="flex-1 btn-electric py-2 rounded-lg text-xs flex items-center justify-center gap-2"
-              >
-                {formLoading
-                  ? <><Icon name="Loader" size={13} className="animate-spin" /> Создаём…</>
-                  : <><Icon name="Plus" size={13} /> Создать</>
-                }
-              </button>
-            </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -293,33 +388,39 @@ export default function MissionsPage() {
             </div>
           ) : (
             <>
-              {/* Map */}
-              <div className="relative h-56 grid-bg radar-bg flex items-center justify-center overflow-hidden">
-                <div className="scan-line" />
-                {Array.from({ length: sel.waypoints }).map((_, i) => {
-                  const angle = (i / Math.max(sel.waypoints, 1)) * Math.PI * 2;
-                  const r = 70 + Math.sin(i * 1.7) * 35;
-                  const x = 50 + Math.cos(angle) * r * 0.42;
-                  const y = 50 + Math.sin(angle) * r * 0.42;
-                  const done = (i / Math.max(sel.waypoints, 1)) * 100 < sel.progress;
-                  return (
-                    <div key={i} className="absolute w-2 h-2 rounded-full -translate-x-1/2 -translate-y-1/2"
-                      style={{ left: `${x}%`, top: `${y}%`, background: done ? "var(--signal-green)" : "rgba(0,212,255,0.4)", boxShadow: done ? "0 0 6px var(--signal-green)" : "none" }}
-                    />
-                  );
-                })}
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center z-10" style={{ background: "rgba(0,212,255,0.15)", border: "1px solid rgba(0,212,255,0.4)" }}>
-                  <Icon name="Navigation" size={20} style={{ color: "var(--electric)" }} />
+              {/* Карта маршрута — реальный WaypointEditor в режиме просмотра */}
+              <div className="relative overflow-hidden" style={{ height: 220 }}>
+                <WaypointEditor
+                  waypoints={(() => {
+                    // Генерируем примерные точки по кругу вокруг дрона миссии
+                    const drone = fleet?.drones?.find(d => d.id === sel.drone_id);
+                    const baseLat = drone ? Number(drone.lat) : 55.751;
+                    const baseLon = drone ? Number(drone.lon) : 37.618;
+                    return Array.from({ length: sel.waypoints }).map((_, i) => {
+                      const angle = (i / Math.max(sel.waypoints, 1)) * Math.PI * 2;
+                      const r = 0.003 + Math.sin(i * 1.7) * 0.001;
+                      return {
+                        lat: baseLat + Math.cos(angle) * r,
+                        lon: baseLon + Math.sin(angle) * r,
+                        action: sel.tasks?.[i] ?? "",
+                      };
+                    });
+                  })()}
+                  onChange={() => {}}
+                  height={220}
+                />
+                {/* Оверлей статуса */}
+                <div className="absolute top-3 left-3 flex items-center gap-2 pointer-events-none">
+                  <span className="tag tag-electric">{sel.code}</span>
+                  {sel.status === "active" && (
+                    <span className="tag tag-green flex items-center gap-1.5"><span className="dot-online" /> Live · {sel.progress}%</span>
+                  )}
+                  {sel.route_adjustments > 0 && (
+                    <span className="tag tag-warning flex items-center gap-1">
+                      <Icon name="RefreshCw" size={10} /> {sel.route_adjustments} коррекций
+                    </span>
+                  )}
                 </div>
-                <div className="absolute top-3 left-3"><span className="tag tag-electric">{sel.code}</span></div>
-                {sel.status === "active" && (
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5 tag tag-green"><span className="dot-online" /> Live</div>
-                )}
-                {sel.route_adjustments > 0 && (
-                  <div className="absolute bottom-3 left-3 flex items-center gap-1.5 tag tag-warning">
-                    <Icon name="RefreshCw" size={10} /> {sel.route_adjustments} коррекций
-                  </div>
-                )}
               </div>
 
               {/* Tabs */}
