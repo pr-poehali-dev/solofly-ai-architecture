@@ -1,22 +1,26 @@
-// Хук живой телеметрии — поллинг fleet + simulate каждые 3 секунды
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { fleet, telemetry, type FleetResponse } from "@/lib/api";
 
 export function useLiveFleet(intervalMs = 3000) {
-  const [data, setData] = useState<FleetResponse | null>(null);
+  const [data, setData]       = useState<FleetResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError]     = useState<string | null>(null);
+  const retryCount            = useRef(0);
+  const MAX_RETRY             = 3;
 
   const refresh = useCallback(async () => {
     try {
-      // Запускаем тик симулятора (обновляет позиции/батарею в БД)
       await telemetry.simulate();
-      // Читаем обновлённый флот
       const res = await fleet.getAll();
       setData(res);
       setError(null);
+      retryCount.current = 0;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка соединения");
+      retryCount.current += 1;
+      if (retryCount.current >= MAX_RETRY) {
+        setError(e instanceof Error ? e.message : "Ошибка соединения");
+      }
+      // При временных ошибках сохраняем предыдущие данные
     } finally {
       setLoading(false);
     }

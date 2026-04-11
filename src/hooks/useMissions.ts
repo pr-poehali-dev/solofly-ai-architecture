@@ -1,11 +1,19 @@
-// Хук миссий с автообновлением
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { missions, type MissionsResponse, type Mission } from "@/lib/api";
 
-export function useMissions(params?: { status?: string; drone_id?: string }, intervalMs = 5000) {
-  const [data, setData] = useState<MissionsResponse | null>(null);
+export function useMissions(
+  params?: { status?: string; drone_id?: string },
+  intervalMs = 5000
+) {
+  const [data, setData]       = useState<MissionsResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError]     = useState<string | null>(null);
+
+  // Стабильный ключ зависимости без JSON.stringify на каждый рендер
+  const paramsKey = useMemo(
+    () => `${params?.status ?? ""}|${params?.drone_id ?? ""}`,
+    [params?.status, params?.drone_id]
+  );
 
   const refresh = useCallback(async () => {
     try {
@@ -13,11 +21,12 @@ export function useMissions(params?: { status?: string; drone_id?: string }, int
       setData(res);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка");
+      setError(e instanceof Error ? e.message : "Ошибка загрузки миссий");
     } finally {
       setLoading(false);
     }
-  }, [JSON.stringify(params)]); // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paramsKey]);
 
   useEffect(() => {
     refresh();
@@ -25,7 +34,10 @@ export function useMissions(params?: { status?: string; drone_id?: string }, int
     return () => clearInterval(t);
   }, [refresh, intervalMs]);
 
-  const updateMission = async (id: number, upd: Partial<Pick<Mission, "status" | "progress">>) => {
+  const updateMission = async (
+    id: number,
+    upd: Partial<Pick<Mission, "status" | "progress">>
+  ) => {
     await missions.update(id, upd);
     await refresh();
   };

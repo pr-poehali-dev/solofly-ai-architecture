@@ -1,14 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Icon from "@/components/ui/icon";
+import { events } from "@/lib/api";
 
-const models = [
-  { name: "PathNet v4.2", type: "Планирование траекторий (RL)", accuracy: 96.8, cycles: 1247, status: "active", framework: "PyTorch", size: "12.4 MB", updated: "8 мин назад" },
-  { name: "VisionCore v7.1", type: "Компьютерное зрение (CNN)", accuracy: 97.4, cycles: 3812, status: "active", framework: "TensorFlow Lite", size: "28.1 MB", updated: "14 мин назад" },
-  { name: "ThreatDetect v2.0", type: "Обнаружение угроз (YOLO)", accuracy: 94.1, cycles: 892, status: "training", framework: "ONNX", size: "18.7 MB", updated: "Обучается..." },
-  { name: "WeatherAdapt v1.4", type: "Погодная адаптация (LSTM)", accuracy: 91.3, cycles: 421, status: "active", framework: "PyTorch", size: "4.2 MB", updated: "2 ч назад" },
-  { name: "DecisionNet v3.0", type: "Принятие решений (DQN)", accuracy: 93.7, cycles: 674, status: "active", framework: "PyTorch", size: "8.9 MB", updated: "32 мин назад" },
-  { name: "Transfer3D v1.0", type: "Трансфер из симуляции (SIM2REAL)", accuracy: 88.2, cycles: 156, status: "training", framework: "ONNX", size: "31.4 MB", updated: "Sim → Real..." },
-];
+const FRAMEWORK_MAP: Record<string, string> = {
+  "PathNet":     "PyTorch",
+  "VisionCore":  "TensorFlow Lite",
+  "ThreatDetect":"ONNX",
+  "WeatherAdapt":"PyTorch",
+  "DecisionNet": "PyTorch",
+  "Transfer3D":  "ONNX",
+};
+const SIZE_MAP: Record<string, string> = {
+  "PathNet":     "12.4 MB",
+  "VisionCore":  "28.1 MB",
+  "ThreatDetect":"18.7 MB",
+  "WeatherAdapt":"4.2 MB",
+  "DecisionNet": "8.9 MB",
+  "Transfer3D":  "31.4 MB",
+};
+const TYPE_MAP: Record<string, string> = {
+  "PathNet":     "Планирование траекторий (RL)",
+  "VisionCore":  "Компьютерное зрение (CNN)",
+  "ThreatDetect":"Обнаружение угроз (YOLO)",
+  "WeatherAdapt":"Погодная адаптация (LSTM)",
+  "DecisionNet": "Принятие решений (DQN)",
+  "Transfer3D":  "Трансфер из симуляции (SIM2REAL)",
+};
+
+function relTime(iso: string) {
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return `${s} с назад`;
+  if (s < 3600) return `${Math.floor(s / 60)} мин назад`;
+  return `${Math.floor(s / 3600)} ч назад`;
+}
 
 const visionClasses = [
   { name: "Человек", count: 1847, confidence: 98.1, color: "var(--danger)" },
@@ -31,6 +55,47 @@ type TabType = "models" | "vision" | "rl" | "transfer" | "online";
 
 export default function AIPage() {
   const [tab, setTab] = useState<TabType>("models");
+  const [aiData, setAiData] = useState<{
+    models: { id: number; name: string; accuracy: number; cycles: number; updated_at: string }[];
+    avg_accuracy: number;
+    total_cycles: number;
+    total_models: number;
+  } | null>(null);
+  const [loadingAi, setLoadingAi] = useState(true);
+
+  useEffect(() => {
+    events.getAIModels()
+      .then(d => setAiData(d))
+      .catch(() => {/* используем fallback */})
+      .finally(() => setLoadingAi(false));
+    const t = setInterval(() => {
+      events.getAIModels().then(d => setAiData(d)).catch(() => {});
+    }, 15000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Обогащаем модели из БД статическими метаданными
+  const models = useMemo(() => {
+    if (!aiData?.models) return [];
+    return aiData.models.map(m => {
+      const key = Object.keys(FRAMEWORK_MAP).find(k => m.name.includes(k)) ?? m.name;
+      return {
+        ...m,
+        type:      TYPE_MAP[key]      ?? "ИИ-модель",
+        framework: FRAMEWORK_MAP[key] ?? "PyTorch",
+        size:      SIZE_MAP[key]      ?? "—",
+        status:    m.accuracy > 90 ? "active" : "training",
+        updated:   relTime(m.updated_at),
+      };
+    });
+  }, [aiData]);
+
+  const avgAccuracy = aiData?.avg_accuracy
+    ? Number(aiData.avg_accuracy).toFixed(1)
+    : "—";
+  const totalCycles = aiData?.total_cycles
+    ? Number(aiData.total_cycles).toLocaleString("ru-RU")
+    : "—";
 
   return (
     <div className="p-6 space-y-5 fade-up">
@@ -48,11 +113,11 @@ export default function AIPage() {
       {/* Overview */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {[
-          { label: "Моделей", val: models.length, color: "var(--electric)", icon: "Brain" },
-          { label: "Циклов RL", val: "1 247", color: "var(--signal-green)", icon: "RefreshCw" },
-          { label: "Ср. точность", val: "93.6%", color: "var(--signal-green)", icon: "Target" },
-          { label: "Классов объектов", val: String(visionClasses.length), color: "var(--electric)", icon: "Layers" },
-          { label: "Задержка инференса", val: "12 мс", color: "var(--signal-green)", icon: "Zap" },
+          { label: "Моделей",          val: loadingAi ? "…" : String(aiData?.total_models ?? models.length), color: "var(--electric)",      icon: "Brain" },
+          { label: "Циклов RL",        val: loadingAi ? "…" : totalCycles,                                    color: "var(--signal-green)",  icon: "RefreshCw" },
+          { label: "Ср. точность",     val: loadingAi ? "…" : `${avgAccuracy}%`,                              color: "var(--signal-green)",  icon: "Target" },
+          { label: "Классов объектов", val: String(visionClasses.length),                                     color: "var(--electric)",      icon: "Layers" },
+          { label: "Задержка инференса",val: "12 мс",                                                         color: "var(--signal-green)",  icon: "Zap" },
         ].map(s => (
           <div key={s.label} className="panel p-4 rounded-xl">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center mb-2" style={{ background: `${s.color}14` }}>
@@ -86,7 +151,11 @@ export default function AIPage() {
       {/* --- MODELS --- */}
       {tab === "models" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {models.map(m => (
+          {loadingAi && models.length === 0
+            ? [1,2,3,4,5,6].map(i => (
+                <div key={i} className="panel rounded-xl p-5 animate-pulse" style={{ height: 160 }} />
+              ))
+            : models.map(m => (
             <div key={m.name} className="panel rounded-xl p-5">
               <div className="flex items-start justify-between mb-3">
                 <div>
@@ -121,6 +190,7 @@ export default function AIPage() {
           ))}
         </div>
       )}
+
 
       {/* --- VISION --- */}
       {tab === "vision" && (

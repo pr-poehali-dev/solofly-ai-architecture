@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Icon from "@/components/ui/icon";
 import { useLiveFleet } from "@/hooks/useLiveFleet";
 import { useEvents } from "@/hooks/useEvents";
@@ -49,10 +49,25 @@ export default function DashboardPage() {
   const flying = fleet?.flying ?? 0;
   const evList = eventsData?.events.slice(0, 5) ?? [];
 
-  // ИИ-метрики из телеметрии летящих дронов
-  const flyingDrones = drones.filter(d => d.status === "flight");
+  // Мемоизируем тяжёлые вычисления
+  const flyingDrones   = useMemo(() => drones.filter(d => d.status === "flight"), [drones]);
+  const activeMissions = useMemo(() => drones.filter(d => d.current_mission?.status === "active").length, [drones]);
+  const minBattery     = useMemo(() => flyingDrones.length ? Math.min(...flyingDrones.map(d => d.battery)) : null, [flyingDrones]);
+  const minBattDrone   = useMemo(() => flyingDrones.length ? flyingDrones.reduce((m, d) => d.battery < m.battery ? d : m, flyingDrones[0]) : null, [flyingDrones]);
 
-  const now = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  const mapDrones = useMemo<MapDrone[]>(() =>
+    drones
+      .filter(d => Number(d.lat) && Number(d.lon))
+      .map(d => ({
+        id: d.id, name: d.name, status: d.status,
+        lat: Number(d.lat), lon: Number(d.lon),
+        altitude: Number(d.altitude), heading: Number(d.heading),
+        speed: Number(d.speed), battery: d.battery,
+      })),
+    [drones]
+  );
+
+  const now   = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
   const today = new Date().toLocaleDateString("ru-RU", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase();
 
   return (
@@ -97,19 +112,15 @@ export default function DashboardPage() {
           },
           {
             icon: "Target", label: "Миссий активно",
-            val: drones.filter(d => d.current_mission?.status === "active").length > 0
-              ? String(drones.filter(d => d.current_mission?.status === "active").length)
-              : "—",
+            val: activeMissions > 0 ? String(activeMissions) : "—",
             color: "var(--electric)",
             sub: "из БД в реальном времени",
           },
           {
             icon: "Zap", label: "Мин. заряд в воздухе",
-            val: flyingDrones.length
-              ? String(Math.min(...flyingDrones.map(d => d.battery))) + "%"
-              : "—",
-            color: flyingDrones.some(d => d.battery < 30) ? "var(--danger)" : "var(--warning)",
-            sub: flyingDrones.length ? flyingDrones.reduce((m, d) => d.battery < m.battery ? d : m, flyingDrones[0])?.id : "нет полётов",
+            val: minBattery !== null ? `${minBattery}%` : "—",
+            color: minBattery !== null && minBattery < 30 ? "var(--danger)" : "var(--warning)",
+            sub: minBattDrone?.id ?? "нет полётов",
           },
         ].map((s) => (
           <div key={s.label} className="panel p-5 rounded-xl">
@@ -257,25 +268,23 @@ export default function DashboardPage() {
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all"
             style={
               geoStatus === "ok"
-                ? { background: "rgba(255,59,48,0.1)", color: "#ff3b30", border: "1px solid rgba(255,59,48,0.25)" }
-                : { background: "hsl(var(--input))", color: "hsl(var(--muted-foreground))", border: "1px solid hsl(var(--border))" }
+                ? { background: "rgba(0,255,136,0.1)", color: "var(--signal-green)", border: "1px solid rgba(0,255,136,0.3)" }
+                : geoStatus === "denied"
+                  ? { background: "rgba(255,59,48,0.08)", color: "var(--danger)", border: "1px solid rgba(255,59,48,0.2)" }
+                  : { background: "hsl(var(--input))", color: "hsl(var(--muted-foreground))", border: "1px solid hsl(var(--border))" }
             }
           >
             <Icon
-              name={geoStatus === "loading" ? "Loader" : geoStatus === "ok" ? "Navigation" : "MapPin"}
+              name={geoStatus === "loading" ? "Loader" : geoStatus === "ok" ? "MapPin" : geoStatus === "denied" ? "MapPinOff" : "MapPin"}
+              fallback="MapPin"
               size={12}
               className={geoStatus === "loading" ? "animate-spin" : ""}
             />
-            {geoStatus === "ok" ? "Моё место на карте" : geoStatus === "denied" ? "Геолокация запрещена" : "Показать моё место"}
+            {geoStatus === "ok" ? "Геолокация активна" : geoStatus === "denied" ? "Геолокация запрещена" : "Показать моё место"}
           </button>
         </div>
         <LiveMap
-          drones={drones.filter(d => Number(d.lat) && Number(d.lon)).map(d => ({
-            id: d.id, name: d.name, status: d.status,
-            lat: Number(d.lat), lon: Number(d.lon),
-            altitude: Number(d.altitude), heading: Number(d.heading),
-            speed: Number(d.speed), battery: d.battery,
-          }) satisfies MapDrone)}
+          drones={mapDrones}
           height={340}
           operatorPos={operatorPos}
           selectedDroneId={selectedDroneId}
