@@ -1,0 +1,30 @@
+{
+  "tests": [
+    {
+      "name": "Тест создания платежа ЮKassa",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "amount": 100.00,
+        "user_name": "Тест Тестов",
+        "user_email": "test@solofly.ru",
+        "user_phone": "+79001234567",
+        "return_url": "https://solofly.ru/?paid=1",
+        "description": "Тестовый платёж",
+        "cart_items": [
+          {
+            "id": "test-1",
+            "name": "Тестовый тариф",
+            "price": 100.00,
+            "quantity": 1
+          }
+        ]
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "payment_url": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
