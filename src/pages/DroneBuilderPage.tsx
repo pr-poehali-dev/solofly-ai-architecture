@@ -1,6 +1,160 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 
+// ── Пошаговый гид для новичка ─────────────────────────────────────────────────
+
+interface GuideStep {
+  step: number;
+  title: string;
+  desc: string;
+  icon: string;
+  budget: string;
+  time: string;
+  tips: string[];
+  category: string;
+}
+
+const GUIDE_STEPS: GuideStep[] = [
+  {
+    step: 1,
+    title: "Определитесь с задачей",
+    desc: "Перед покупкой любых деталей — ответьте себе на вопрос: зачем нужен дрон? От задачи зависит всё: размер, бюджет, тип компонентов.",
+    icon: "Target",
+    budget: "0 ₽",
+    time: "1–2 дня",
+    tips: [
+      "Аэрофотосъёмка/видео → рама 450 мм, стабильный гимбал, время полёта 20+ мин",
+      "Патрулирование/мониторинг → рама 500–600 мм, тепловизор или широкоугольная камера",
+      "Картография/LiDAR → рама 650+ мм, RTK GPS, высокая грузоподъёмность",
+      "Обучение/тренировка → готовый бюджетный квадрокоптер или рама 250 мм",
+      "Гонки → рама 250 мм, высокий KV, гоночные пропеллеры",
+    ],
+    category: "frames",
+  },
+  {
+    step: 2,
+    title: "Выберите раму",
+    desc: "Рама — основа всего. Она определяет размер пропеллеров, количество моторов и то, что вообще войдёт внутрь.",
+    icon: "Box",
+    budget: "2 000–8 000 ₽",
+    time: "2–3 дня",
+    tips: [
+      "Для начала рекомендуем раму 450 мм — универсальный размер, много обучающих материалов",
+      "Карбоновая рама прослужит дольше пластиковой, но стоит дороже",
+      "Проверьте, есть ли место для полётного контроллера, АКБ и нагрузки",
+      "Купите сразу 2 запасных луча — они ломаются при первых падениях",
+    ],
+    category: "frames",
+  },
+  {
+    step: 3,
+    title: "Подберите моторы и пропеллеры",
+    desc: "Моторы — сердце дрона. Подбираются под раму и задачу. Пропеллеры — сразу вместе с моторами по рекомендации производителя.",
+    icon: "Zap",
+    budget: "4 000–12 000 ₽",
+    time: "2–4 дня",
+    tips: [
+      "Для рамы 450 мм: моторы 2212–2216, KV 920–1100, пропеллеры 10×4.5 дюйма",
+      "Тяга каждого мотора × 4 должна быть в 2 раза больше взлётного веса",
+      "Всегда берите 2–4 запасных пропеллера — они ломаются чаще всего",
+      "Не экономьте на моторах — это залог безопасности и ресурса",
+    ],
+    category: "motors",
+  },
+  {
+    step: 4,
+    title: "Полётный контроллер и ESC",
+    desc: "FC — мозг дрона. ESC — регуляторы для каждого мотора. Для новичка лучший выбор — стек (FC+ESC вместе).",
+    icon: "Cpu",
+    budget: "5 000–15 000 ₽",
+    time: "3–5 дней",
+    tips: [
+      "Начинающим рекомендуем Ardupilot на Pixhawk 2.4.8 — много обучающих видео на русском",
+      "Стек FC+ESC (4-в-1) проще в сборке для первого дрона",
+      "Сразу установите прошивку и подключите к Mission Planner до монтажа на раму",
+      "Купите USB-кабель для FC отдельно — в комплекте часто нет",
+    ],
+    category: "fc",
+  },
+  {
+    step: 5,
+    title: "АКБ и система питания",
+    desc: "Аккумулятор определяет время полёта. Для начала достаточно одного, но лучше сразу двух — пока один летит, второй заряжается.",
+    icon: "Battery",
+    budget: "3 000–8 000 ₽",
+    time: "1–2 дня",
+    tips: [
+      "Для рамы 450 мм: LiPo 4S 5000 мАч — даст 15–20 минут полёта",
+      "Сразу купите зарядник с балансировкой (ISDT Q6, ToolkitRC M6)",
+      "Никогда не заряжайте без присмотра и не в доме — только в огнестойкой сумке",
+      "Храните АКБ при 3.8В/ячейку — режим Storage есть в любом заряднике",
+    ],
+    category: "power",
+  },
+  {
+    step: 6,
+    title: "GPS и телеметрия",
+    desc: "GPS нужен для стабильного зависания, возврата домой (RTL) и автономных полётов. Без него дрон будет дрейфовать.",
+    icon: "Crosshair",
+    budget: "2 000–6 000 ₽",
+    time: "1–2 дня",
+    tips: [
+      "Минимум: GPS-модуль с компасом типа Ublox Neo-M8N на стойке выше рамы",
+      "Расположите GPS подальше от силовых кабелей — они мешают компасу",
+      "Для первого дрона SiK-радиотелеметрия 433 МГц достаточна на 1–3 км",
+      "Настройте failsafe RTL (возврат домой) до первого полёта — обязательно!",
+    ],
+    category: "sensors",
+  },
+  {
+    step: 7,
+    title: "Сборка и пайка",
+    desc: "Когда все компоненты есть — начинается самое интересное. Сборка занимает 1–3 дня при первом опыте, не торопитесь.",
+    icon: "Wrench",
+    budget: "1 000–3 000 ₽ (инструменты)",
+    time: "2–5 дней",
+    tips: [
+      "Сначала спаяйте силовую часть (АКБ → PDB → ESC), проверьте без моторов",
+      "Loctite 243 на все болты моторов — без этого открутятся за 5 полётов",
+      "Сфотографируйте каждый этап — поможет при отладке",
+      "Первое включение — без пропеллеров! Проверьте направление вращения моторов",
+    ],
+    category: "maintenance",
+  },
+  {
+    step: 8,
+    title: "Настройка и калибровка",
+    desc: "Перед полётом нужно откалибровать FC и правильно настроить параметры. Это займёт час, но убережёт от потери дрона.",
+    icon: "Settings",
+    budget: "0 ₽",
+    time: "3–6 часов",
+    tips: [
+      "Mission Planner → Setup → Mandatory Hardware → пройдите все шаги по порядку",
+      "Калибровка акселерометра: 6 положений, строго горизонтально",
+      "Калибровка компаса: на улице, подальше от машин и металлоконструкций",
+      "Проверьте моторы через Motor Test — они должны вращаться в правильном направлении",
+      "Настройте RTL (возврат домой) и Battery Failsafe до первого полёта",
+    ],
+    category: "fc",
+  },
+  {
+    step: 9,
+    title: "Первый полёт",
+    desc: "Вы готовы! Первые полёты — только в ручном режиме, на небольшой высоте, в безветренную погоду, на открытой площадке.",
+    icon: "Navigation",
+    budget: "0 ₽",
+    time: "День Х",
+    tips: [
+      "Первый полёт: Stabilize режим, высота 1–2 метра, 5–10 минут",
+      "Место: поле или парк без людей, минимум 100 м от зданий и дорог",
+      "Проверьте NOTAM и зарегистрируйте БПЛА на Госуслугах (>250 г)",
+      "Снимите видео первого полёта — потом будет приятно смотреть",
+      "После полёта скачайте логи и проверьте вибрации в Mission Planner",
+    ],
+    category: "maintenance",
+  },
+];
+
 // ── Данные ────────────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
@@ -460,6 +614,164 @@ const ARTICLES: Record<CategoryId, Article[]> = {
 const DIFFICULTY_LABEL = { easy: "Базовый", medium: "Средний", hard: "Продвинутый" };
 const DIFFICULTY_CLS   = { easy: "tag-green", medium: "tag-electric", hard: "tag-danger" };
 
+// ── Компонент: пошаговый гид ──────────────────────────────────────────────────
+
+function StarterGuide({ onOpenCategory }: { onOpenCategory: (cat: string) => void }) {
+  const [activeStep, setActiveStep] = useState<number | null>(null);
+  const [completed, setCompleted]   = useState<Set<number>>(new Set());
+
+  const toggle = (step: number) => {
+    setActiveStep(prev => prev === step ? null : step);
+  };
+
+  const markDone = (e: React.MouseEvent, step: number) => {
+    e.stopPropagation();
+    setCompleted(prev => {
+      const next = new Set(prev);
+      if (next.has(step)) { next.delete(step); } else { next.add(step); }
+      return next;
+    });
+  };
+
+  const totalBudgetMin = 17000;
+  const totalBudgetMax = 52000;
+  const progress = Math.round((completed.size / GUIDE_STEPS.length) * 100);
+
+  return (
+    <div className="space-y-4">
+
+      {/* Шапка гида */}
+      <div className="panel rounded-2xl p-5"
+        style={{ border: "1px solid rgba(0,255,136,0.2)", background: "linear-gradient(135deg, rgba(0,255,136,0.04) 0%, rgba(0,212,255,0.04) 100%)" }}>
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <h2 className="font-bold text-base mb-1">Собираем первый дрон с нуля</h2>
+            <p className="text-sm text-muted-foreground">9 шагов · бюджет {totalBudgetMin.toLocaleString("ru-RU")}–{totalBudgetMax.toLocaleString("ru-RU")} ₽ · 3–6 недель</p>
+          </div>
+          <div className="text-right shrink-0">
+            <div className="hud-value text-2xl" style={{ color: progress === 100 ? "var(--signal-green)" : "var(--electric)" }}>{progress}%</div>
+            <div className="hud-label">выполнено</div>
+          </div>
+        </div>
+        {/* Прогресс-бар */}
+        <div className="bar-track">
+          <div className="bar-fill transition-all duration-500"
+            style={{ width: `${progress}%`, background: progress === 100 ? "var(--signal-green)" : "var(--electric)" }} />
+        </div>
+        {progress === 100 && (
+          <p className="text-xs mt-2 text-center" style={{ color: "var(--signal-green)" }}>
+            Отлично! Вы готовы к первому полёту!
+          </p>
+        )}
+      </div>
+
+      {/* Шаги */}
+      {GUIDE_STEPS.map((s) => {
+        const isOpen = activeStep === s.step;
+        const isDone = completed.has(s.step);
+        return (
+          <div key={s.step}
+            className="panel rounded-xl overflow-hidden transition-all"
+            style={{
+              border: isDone
+                ? "1px solid rgba(0,255,136,0.3)"
+                : isOpen
+                  ? "1px solid rgba(0,212,255,0.3)"
+                  : "1px solid hsl(var(--border))",
+              background: isDone ? "rgba(0,255,136,0.03)" : undefined,
+            }}>
+
+            {/* Заголовок шага */}
+            <button
+              className="w-full flex items-center gap-3 px-4 py-3.5 text-left"
+              onClick={() => toggle(s.step)}
+            >
+              {/* Номер / галочка */}
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold transition-all"
+                style={isDone
+                  ? { background: "rgba(0,255,136,0.15)", color: "var(--signal-green)", border: "1px solid rgba(0,255,136,0.4)" }
+                  : { background: "rgba(0,212,255,0.1)", color: "var(--electric)", border: "1px solid rgba(0,212,255,0.25)" }
+                }
+              >
+                {isDone ? <Icon name="Check" size={14} /> : s.step}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <Icon name={s.icon} fallback="Circle" size={13}
+                    style={{ color: isDone ? "var(--signal-green)" : "var(--electric)", flexShrink: 0 }} />
+                  <span className="font-semibold text-sm">{s.title}</span>
+                </div>
+                <div className="flex items-center gap-3 mt-0.5">
+                  <span className="hud-label flex items-center gap-1">
+                    <Icon name="Banknote" fallback="DollarSign" size={9} />{s.budget}
+                  </span>
+                  <span className="hud-label flex items-center gap-1">
+                    <Icon name="Clock" size={9} />{s.time}
+                  </span>
+                </div>
+              </div>
+
+              <Icon name={isOpen ? "ChevronUp" : "ChevronDown"} size={14}
+                className="shrink-0 text-muted-foreground" />
+            </button>
+
+            {/* Развёрнутое содержимое */}
+            {isOpen && (
+              <div className="px-4 pb-4 space-y-3"
+                style={{ borderTop: "1px solid hsl(var(--border))" }}>
+                <p className="text-sm text-muted-foreground pt-3 leading-relaxed">{s.desc}</p>
+
+                <div className="space-y-2">
+                  {s.tips.map((tip, i) => (
+                    <div key={i} className="flex items-start gap-2 text-sm">
+                      <Icon name="ChevronRight" size={13}
+                        className="shrink-0 mt-0.5" style={{ color: "var(--electric)" }} />
+                      <span className="leading-snug">{tip}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    onClick={() => onOpenCategory(s.category)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all"
+                    style={{ background: "rgba(0,212,255,0.08)", color: "var(--electric)", border: "1px solid rgba(0,212,255,0.2)" }}
+                  >
+                    <Icon name="BookOpen" size={11} />
+                    Читать статьи по теме
+                  </button>
+                  <button
+                    onClick={(e) => markDone(e, s.step)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all"
+                    style={isDone
+                      ? { background: "rgba(0,255,136,0.1)", color: "var(--signal-green)", border: "1px solid rgba(0,255,136,0.3)" }
+                      : { background: "hsl(var(--input))", color: "hsl(var(--muted-foreground))", border: "1px solid hsl(var(--border))" }
+                    }
+                  >
+                    <Icon name={isDone ? "CheckCircle" : "Circle"} size={11} />
+                    {isDone ? "Выполнено" : "Отметить выполненным"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Итог */}
+      <div className="panel rounded-xl p-4 flex items-center gap-3"
+        style={{ border: "1px solid rgba(0,212,255,0.12)" }}>
+        <Icon name="Info" size={14} style={{ color: "var(--electric)", flexShrink: 0 }} />
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Итого на первый дрон: <span className="font-semibold" style={{ color: "hsl(var(--foreground))" }}>{totalBudgetMin.toLocaleString("ru-RU")}–{totalBudgetMax.toLocaleString("ru-RU")} ₽</span>. Бюджет без пульта управления, очков FPV и инструментов. Для каждого шага читайте статьи в соответствующем разделе.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ── Компонент карточки статьи ─────────────────────────────────────────────────
 
 function ArticleCard({ article, onOpen }: { article: Article; onOpen: () => void }) {
@@ -544,7 +856,10 @@ function ArticleModal({ article, onClose }: { article: Article; onClose: () => v
 
 // ── Главная страница ──────────────────────────────────────────────────────────
 
+type Tab = "guide" | "articles";
+
 export default function DroneBuilderPage() {
+  const [tab, setTab]                       = useState<Tab>("guide");
   const [activeCategory, setActiveCategory] = useState<CategoryId>("frames");
   const [openArticle, setOpenArticle]       = useState<Article | null>(null);
   const [search, setSearch]                 = useState("");
@@ -557,12 +872,18 @@ export default function DroneBuilderPage() {
       )
     : articles;
 
+  const handleOpenCategory = (cat: string) => {
+    setTab("articles");
+    setActiveCategory(cat as CategoryId);
+    setSearch("");
+  };
+
   return (
     <div className="p-6 fade-up">
 
       {/* Заголовок */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-1">
+      <div className="mb-5">
+        <div className="flex items-center gap-3 mb-4">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center"
             style={{ background: "rgba(0,212,255,0.12)", border: "1px solid rgba(0,212,255,0.25)" }}>
             <Icon name="Wrench" size={18} style={{ color: "var(--electric)" }} />
@@ -576,85 +897,120 @@ export default function DroneBuilderPage() {
           <span className="tag tag-green ml-auto" style={{ fontSize: 9 }}>Бесплатно</span>
         </div>
 
-        {/* Поиск */}
-        <div className="relative mt-4">
-          <Icon name="Search" size={14}
-            className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-            style={{ color: "hsl(var(--muted-foreground))" }} />
-          <input
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm"
-            style={{ background: "hsl(var(--input))", border: "1px solid hsl(var(--border))", color: "hsl(var(--foreground))" }}
-            placeholder="Поиск по теме (мотор, LiDAR, Ardupilot…)"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-          {search && (
-            <button onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-              <Icon name="X" size={13} />
-            </button>
-          )}
+        {/* Переключатель вкладок */}
+        <div className="flex gap-1 p-1 rounded-xl" style={{ background: "hsl(var(--input))", display: "inline-flex" }}>
+          <button
+            onClick={() => setTab("guide")}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+            style={tab === "guide"
+              ? { background: "rgba(0,255,136,0.15)", color: "var(--signal-green)", border: "1px solid rgba(0,255,136,0.35)" }
+              : { color: "hsl(var(--muted-foreground))", border: "1px solid transparent" }
+            }
+          >
+            <Icon name="MapPin" size={13} />
+            С чего начать
+          </button>
+          <button
+            onClick={() => setTab("articles")}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+            style={tab === "articles"
+              ? { background: "rgba(0,212,255,0.15)", color: "var(--electric)", border: "1px solid rgba(0,212,255,0.35)" }
+              : { color: "hsl(var(--muted-foreground))", border: "1px solid transparent" }
+            }
+          >
+            <Icon name="BookOpen" size={13} />
+            Все статьи
+          </button>
         </div>
       </div>
 
-      {/* Категории */}
-      {!search && (
-        <div className="flex gap-2 flex-wrap mb-5">
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-              style={activeCategory === cat.id
-                ? { background: "rgba(0,212,255,0.15)", color: "var(--electric)", border: "1px solid rgba(0,212,255,0.4)" }
-                : { background: "hsl(var(--input))", color: "hsl(var(--muted-foreground))", border: "1px solid transparent" }
-              }
-            >
-              <Icon name={cat.icon} fallback="BookOpen" size={12} />
-              {cat.label}
-            </button>
-          ))}
-        </div>
+      {/* ── Вкладка: С чего начать ── */}
+      {tab === "guide" && (
+        <StarterGuide onOpenCategory={handleOpenCategory} />
       )}
 
-      {/* Статьи */}
-      {search && (
-        <p className="text-xs text-muted-foreground mb-3">
-          Результаты поиска: {filtered.length} {filtered.length === 1 ? "статья" : "статей"}
-        </p>
-      )}
-
-      {filtered.length === 0 ? (
-        <div className="panel rounded-xl p-10 text-center text-muted-foreground text-sm">
-          По запросу «{search}» ничего не найдено
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {filtered.map((article, i) => (
-            <ArticleCard key={i} article={article} onOpen={() => setOpenArticle(article)} />
-          ))}
-        </div>
-      )}
-
-      {/* Баннер внизу */}
-      {!search && (
-        <div className="mt-6 panel rounded-xl p-5 flex items-center gap-4"
-          style={{ border: "1px solid rgba(0,255,136,0.15)", background: "rgba(0,255,136,0.03)" }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: "rgba(0,255,136,0.1)" }}>
-            <Icon name="BookOpen" size={18} style={{ color: "var(--signal-green)" }} />
-          </div>
-          <div>
-            <div className="font-semibold text-sm">База знаний пополняется</div>
-            <div className="text-xs text-muted-foreground mt-0.5">
-              Есть вопрос или хотите добавить тему — напишите в{" "}
-              <button className="underline" style={{ color: "var(--electric)" }}
-                onClick={() => window.open("https://t.me/+QgiLIa1gFRY4Y2Iy", "_blank")}>
-                Telegram-сообщество
+      {/* ── Вкладка: Статьи ── */}
+      {tab === "articles" && (
+        <>
+          {/* Поиск */}
+          <div className="relative mb-4">
+            <Icon name="Search" size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ color: "hsl(var(--muted-foreground))" }} />
+            <input
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm"
+              style={{ background: "hsl(var(--input))", border: "1px solid hsl(var(--border))", color: "hsl(var(--foreground))" }}
+              placeholder="Поиск по теме (мотор, LiDAR, Ardupilot…)"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            {search && (
+              <button onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <Icon name="X" size={13} />
               </button>
-            </div>
+            )}
           </div>
-        </div>
+
+          {/* Категории */}
+          {!search && (
+            <div className="flex gap-2 flex-wrap mb-5">
+              {CATEGORIES.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                  style={activeCategory === cat.id
+                    ? { background: "rgba(0,212,255,0.15)", color: "var(--electric)", border: "1px solid rgba(0,212,255,0.4)" }
+                    : { background: "hsl(var(--input))", color: "hsl(var(--muted-foreground))", border: "1px solid transparent" }
+                  }
+                >
+                  <Icon name={cat.icon} fallback="BookOpen" size={12} />
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {search && (
+            <p className="text-xs text-muted-foreground mb-3">
+              Результаты поиска: {filtered.length} {filtered.length === 1 ? "статья" : "статей"}
+            </p>
+          )}
+
+          {filtered.length === 0 ? (
+            <div className="panel rounded-xl p-10 text-center text-muted-foreground text-sm">
+              По запросу «{search}» ничего не найдено
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {filtered.map((article, i) => (
+                <ArticleCard key={i} article={article} onOpen={() => setOpenArticle(article)} />
+              ))}
+            </div>
+          )}
+
+          {/* Баннер внизу */}
+          {!search && (
+            <div className="mt-6 panel rounded-xl p-5 flex items-center gap-4"
+              style={{ border: "1px solid rgba(0,255,136,0.15)", background: "rgba(0,255,136,0.03)" }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: "rgba(0,255,136,0.1)" }}>
+                <Icon name="BookOpen" size={18} style={{ color: "var(--signal-green)" }} />
+              </div>
+              <div>
+                <div className="font-semibold text-sm">База знаний пополняется</div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  Есть вопрос или хотите добавить тему — напишите в{" "}
+                  <button className="underline" style={{ color: "var(--electric)" }}
+                    onClick={() => window.open("https://t.me/+QgiLIa1gFRY4Y2Iy", "_blank")}>
+                    Telegram-сообщество
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Модальное окно */}
