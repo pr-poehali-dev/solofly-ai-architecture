@@ -218,6 +218,38 @@ export default function Layout({ currentPage, onNavigate, children, isLanding }:
 
       {/* Main */}
       <main className="flex-1 overflow-y-auto" style={{ background: "hsl(var(--background))" }}>
+        {/* Хлебные крошки (BreadcrumbList JSON-LD для Google) */}
+        {currentPage !== "landing" && currentPage !== "dashboard" && (
+          <>
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                  { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://solofly-ai-architecture.poehali.dev/" },
+                  { "@type": "ListItem", "position": 2, "name": "Система", "item": "https://solofly-ai-architecture.poehali.dev/?page=dashboard" },
+                  ...( currentPage !== "dashboard" ? [{ "@type": "ListItem", "position": 3, "name": navItems.find(n => n.id === currentPage)?.label ?? currentPage, "item": `https://solofly-ai-architecture.poehali.dev/?page=${currentPage}` }] : []),
+                ],
+              })}}
+            />
+            <nav aria-label="breadcrumb"
+              className="flex items-center gap-1.5 px-6 py-2 text-xs text-muted-foreground border-b"
+              style={{ borderColor: "hsl(var(--border))" }}>
+              <button onClick={() => onNavigate("dashboard")} className="hover:text-foreground transition-colors">
+                Система
+              </button>
+              {currentPage !== "dashboard" && (
+                <>
+                  <span>/</span>
+                  <span style={{ color: "hsl(var(--foreground))" }}>
+                    {navItems.find(n => n.id === currentPage)?.label ?? currentPage}
+                  </span>
+                </>
+              )}
+            </nav>
+          </>
+        )}
         {children}
       </main>
     </div>
