@@ -21,7 +21,7 @@ import ProfilePage from "./ProfilePage";
 import PrivacyPage from "./PrivacyPage";
 
 type Page =
-  | "landing" | "dashboard" | "missions" | "flightcontrol"
+  | "landing" | "auth" | "dashboard" | "missions" | "flightcontrol"
   | "ai" | "swarm" | "monitoring" | "flightlog"
   | "security" | "api" | "support" | "integrations" | "scanning" | "scanarchive" | "ucp"
   | "profile" | "privacy";
@@ -48,11 +48,23 @@ export default function Index() {
     );
   }
 
-  // Не авторизован — показываем страницу входа/регистрации
+  // Не авторизован — только лендинг и политика, остальное → форма входа
   if (!user) {
-    // Показываем политику по прямой ссылке без авторизации
     if (new URLSearchParams(window.location.search).get("privacy") === "1") {
       return <PrivacyPage standalone onClose={() => window.history.back()} />;
+    }
+    if (page === "landing" || page === "privacy") {
+      return (
+        <Layout currentPage={page} onNavigate={p => {
+          if (p === "landing" || p === "privacy") setPage(p as Page);
+          else setPage("auth" as Page);
+        }} isLanding>
+          {page === "privacy" ? <PrivacyPage /> : <LandingPage onNavigate={p => {
+            if (p === "dashboard" || p !== "landing") setPage("auth" as Page);
+            else setPage(p as Page);
+          }} />}
+        </Layout>
+      );
     }
     return <AuthPage onSuccess={() => setPage("dashboard")} />;
   }
@@ -76,6 +88,7 @@ export default function Index() {
       case "ucp":         return <UCPPage />;
       case "profile":     return <ProfilePage />;
       case "privacy":     return <PrivacyPage />;
+      case "auth":        return <DashboardPage />;
       default: return <DashboardPage />;
     }
   };
