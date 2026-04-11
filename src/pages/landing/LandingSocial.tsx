@@ -302,10 +302,10 @@ export default function LandingSocial({ onNavigate }: LandingSocialProps) {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
           {[
-            { name: "Михаил Антонов", role: "CEO, сооснователь", area: "Стратегия, авиационное право, бизнес-развитие", icon: "User" },
-            { name: "Алина Тихова", role: "CTO, сооснователь", area: "Архитектура системы, MAVLink-интеграция, бортовое ПО", icon: "Code" },
-            { name: "Дмитрий Ершов", role: "Lead ML Engineer", area: "ИИ-ядро, компьютерное зрение, алгоритмы планирования", icon: "Brain" },
-            { name: "Наталья Федосова", role: "Head of Product", area: "UX, тестирование с клиентами, конструктор БПЛА", icon: "Layers" },
+            { name: "Тюрин Максим", role: "Генеральный директор, CEO, сооснователь", area: "Стратегия, авиационное право, бизнес-развитие", icon: "User" },
+            { name: "Тюрин Александр", role: "CTO, сооснователь", area: "Архитектура системы, MAVLink-интеграция, бортовое ПО", icon: "Code" },
+            { name: "Петрушкин Олег", role: "Lead ML Engineer", area: "ИИ-ядро, компьютерное зрение, алгоритмы планирования", icon: "Brain" },
+            { name: "Красильников Данила", role: "Head of Product", area: "UX, тестирование с клиентами, конструктор БПЛА", icon: "Layers" },
           ].map(member => (
             <div key={member.name} className="panel rounded-2xl p-5 text-center">
               <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3"
