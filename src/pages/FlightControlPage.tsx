@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { useLiveFleet } from "@/hooks/useLiveFleet";
 import LiveMap, { type MapDrone } from "@/components/LiveMap";
+import { fleet } from "@/lib/api";
 
 const maneuvers = [
   { id: "hover", label: "Зависание", icon: "Pause" },
@@ -13,9 +14,11 @@ const maneuvers = [
 ];
 
 export default function FlightControlPage() {
-  const { data: fleet, loading } = useLiveFleet(3000);
+  const { data: fleetData, loading, refresh } = useLiveFleet(3000);
   const [selDroneId, setSelDroneId] = useState("SF-001");
   const [activeManeuver, setActiveManeuver] = useState<string | null>(null);
+  const [cmdLoading, setCmdLoading] = useState(false);
+  const [cmdResult, setCmdResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [operatorPos, setOperatorPos] = useState<{ lat: number; lon: number } | null>(null);
   const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "ok" | "denied">("idle");
   const [distanceToDrone, setDistanceToDrone] = useState<number | null>(null);
@@ -34,10 +37,30 @@ export default function FlightControlPage() {
     );
   };
 
+  // Команда манёвра → бэкенд
+  const sendManeuver = async (maneuver: string) => {
+    if (cmdLoading) return;
+    setCmdLoading(true);
+    setCmdResult(null);
+    try {
+      const res = await fleet.command(selDroneId, maneuver);
+      setActiveManeuver(maneuver);
+      setCmdResult({ ok: true, msg: `Команда «${maneuver}» отправлена` });
+      setTimeout(() => setCmdResult(null), 3000);
+      refresh();
+      void res;
+    } catch {
+      setCmdResult({ ok: false, msg: "Ошибка отправки команды" });
+      setTimeout(() => setCmdResult(null), 3000);
+    } finally {
+      setCmdLoading(false);
+    }
+  };
+
   // Дистанция оператор → дрон (Haversine)
   useEffect(() => {
     if (!operatorPos) { setDistanceToDrone(null); return; }
-    const dr = (fleet?.drones ?? []).find(d => d.id === selDroneId);
+    const dr = (fleetData?.drones ?? []).find(d => d.id === selDroneId);
     if (!dr || !Number(dr.lat)) { setDistanceToDrone(null); return; }
     const R  = 6371000;
     const φ1 = operatorPos.lat * Math.PI / 180;
@@ -47,9 +70,9 @@ export default function FlightControlPage() {
     const a  = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
     const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     setDistanceToDrone(Math.round(dist));
-  }, [operatorPos, selDroneId, fleet]);
+  }, [operatorPos, selDroneId, fleetData]);
 
-  const drones = fleet?.drones ?? [];
+  const drones = fleetData?.drones ?? [];
   const flyingDrones = drones.filter(d => d.status === "flight" || d.status === "standby");
   const droneRaw = drones.find(d => d.id === selDroneId) ?? drones[0];
 
@@ -271,7 +294,7 @@ export default function FlightControlPage() {
             </div>
           </div>
           <LiveMap
-            drones={(fleet?.drones ?? [])
+            drones={(fleetData?.drones ?? [])
               .filter(d => Number(d.lat) && Number(d.lon))
               .map(d => ({
                 id: d.id, name: d.name, status: d.status,
@@ -298,18 +321,35 @@ export default function FlightControlPage() {
       {drone && <div className="panel rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-sm">Манёвры и режимы</h2>
-          <span className="tag tag-electric">Автономный режим</span>
+          <div className="flex items-center gap-2">
+            {cmdResult && (
+              <span className={`tag ${cmdResult.ok ? "tag-green" : "tag-danger"} transition-all`}>
+                {cmdResult.msg}
+              </span>
+            )}
+            <span className="tag tag-electric">Автономный режим</span>
+          </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {maneuvers.map(m => (
             <button
               key={m.id}
-              onClick={() => setActiveManeuver(activeManeuver === m.id ? null : m.id)}
+              onClick={() => sendManeuver(m.id)}
+              disabled={cmdLoading}
               className={`p-4 rounded-xl flex flex-col items-center gap-2 transition-all text-center ${activeManeuver === m.id ? "panel-glow" : "panel hover:border-[rgba(0,212,255,0.2)]"}`}
-              style={activeManeuver === m.id ? { borderColor: "rgba(0,212,255,0.4)" } : {}}
+              style={{
+                ...(activeManeuver === m.id ? { borderColor: "rgba(0,212,255,0.4)" } : {}),
+                opacity: cmdLoading ? 0.6 : 1,
+              }}
             >
               <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: activeManeuver === m.id ? "rgba(0,212,255,0.15)" : "hsl(var(--input))" }}>
-                <Icon name={m.icon} fallback="Navigation" size={18} style={{ color: activeManeuver === m.id ? "var(--electric)" : "hsl(var(--muted-foreground))" }} />
+                <Icon
+                  name={cmdLoading && activeManeuver === m.id ? "Loader" : m.icon}
+                  fallback="Navigation"
+                  size={18}
+                  className={cmdLoading && activeManeuver === m.id ? "animate-spin" : ""}
+                  style={{ color: activeManeuver === m.id ? "var(--electric)" : "hsl(var(--muted-foreground))" }}
+                />
               </div>
               <span className="text-xs font-medium">{m.label}</span>
               {activeManeuver === m.id && <span className="tag tag-green" style={{ fontSize: 9 }}>Активен</span>}

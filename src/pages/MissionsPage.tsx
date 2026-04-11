@@ -1,6 +1,8 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { useMissions } from "@/hooks/useMissions";
+import { useLiveFleet } from "@/hooks/useLiveFleet";
+import { missions as missionsApi } from "@/lib/api";
 import type { Mission } from "@/lib/api";
 
 const typeIcon: Record<string, string> = {
@@ -32,9 +34,47 @@ function fmtTime(iso: string | null) {
 }
 
 export default function MissionsPage() {
-  const { data, loading, updateMission } = useMissions({}, 5000);
+  const { data, loading, updateMission, refresh } = useMissions({}, 5000);
+  const { data: fleet } = useLiveFleet(0); // только для списка дронов в форме
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [tab, setTab] = useState<TabType>("map");
+
+  // Форма создания миссии
+  const [showForm, setShowForm] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    name: "",
+    drone_id: "",
+    type: "patrol",
+    waypoints: 8,
+  });
+
+  const handleCreate = async () => {
+    if (!form.name.trim() || !form.drone_id) {
+      setFormError("Заполни название и выбери дрон");
+      return;
+    }
+    setFormLoading(true);
+    setFormError(null);
+    try {
+      const code = `MSN-${String(Date.now()).slice(-3)}`;
+      await missionsApi.create({
+        code,
+        name:     form.name.trim(),
+        drone_id: form.drone_id,
+        type:     form.type,
+        waypoints: form.waypoints,
+      });
+      setShowForm(false);
+      setForm({ name: "", drone_id: "", type: "patrol", waypoints: 8 });
+      await refresh();
+    } catch {
+      setFormError("Ошибка при создании миссии");
+    } finally {
+      setFormLoading(false);
+    }
+  };
 
   const missionsList = data?.missions ?? [];
   const sel: Mission | undefined = missionsList.find(m => m.id === selectedId)
@@ -63,11 +103,105 @@ export default function MissionsPage() {
             {data && <span className="ml-2 text-muted-foreground">({data.total} миссий)</span>}
           </p>
         </div>
-        <button className="btn-electric px-4 py-2 rounded-lg text-xs flex items-center gap-2">
+        <button
+          onClick={() => { setShowForm(true); setFormError(null); }}
+          className="btn-electric px-4 py-2 rounded-lg text-xs flex items-center gap-2"
+        >
           <Icon name="Plus" size={13} />
           Новая миссия
         </button>
       </div>
+
+      {/* Форма создания миссии */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
+          <div className="panel rounded-2xl p-6 w-full max-w-md space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-base">Новая миссия</h2>
+              <button onClick={() => setShowForm(false)} className="btn-ghost p-1.5 rounded-lg">
+                <Icon name="X" size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="hud-label block mb-1.5">Название миссии</label>
+                <input
+                  className="w-full px-3 py-2 rounded-lg text-sm"
+                  style={{ background: "hsl(var(--input))", border: "1px solid hsl(var(--border))", color: "hsl(var(--foreground))" }}
+                  placeholder="Патруль периметра Б"
+                  value={form.name}
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="hud-label block mb-1.5">Дрон</label>
+                <select
+                  className="w-full px-3 py-2 rounded-lg text-sm"
+                  style={{ background: "hsl(var(--input))", border: "1px solid hsl(var(--border))", color: "hsl(var(--foreground))" }}
+                  value={form.drone_id}
+                  onChange={e => setForm(f => ({ ...f, drone_id: e.target.value }))}
+                >
+                  <option value="">Выбери дрон</option>
+                  {(fleet?.drones ?? []).map(d => (
+                    <option key={d.id} value={d.id}>{d.name} ({d.status})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="hud-label block mb-1.5">Тип миссии</label>
+                  <select
+                    className="w-full px-3 py-2 rounded-lg text-sm"
+                    style={{ background: "hsl(var(--input))", border: "1px solid hsl(var(--border))", color: "hsl(var(--foreground))" }}
+                    value={form.type}
+                    onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
+                  >
+                    {Object.entries(typeName).map(([k, v]) => (
+                      <option key={k} value={k}>{v}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="hud-label block mb-1.5">Точек маршрута</label>
+                  <input
+                    type="number" min={2} max={50}
+                    className="w-full px-3 py-2 rounded-lg text-sm"
+                    style={{ background: "hsl(var(--input))", border: "1px solid hsl(var(--border))", color: "hsl(var(--foreground))" }}
+                    value={form.waypoints}
+                    onChange={e => setForm(f => ({ ...f, waypoints: Number(e.target.value) }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {formError && (
+              <div className="text-xs px-3 py-2 rounded-lg" style={{ background: "rgba(255,59,48,0.1)", color: "var(--danger)" }}>
+                {formError}
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-1">
+              <button onClick={() => setShowForm(false)} className="flex-1 btn-ghost py-2 rounded-lg text-xs">
+                Отмена
+              </button>
+              <button
+                onClick={handleCreate}
+                disabled={formLoading}
+                className="flex-1 btn-electric py-2 rounded-lg text-xs flex items-center justify-center gap-2"
+              >
+                {formLoading
+                  ? <><Icon name="Loader" size={13} className="animate-spin" /> Создаём…</>
+                  : <><Icon name="Plus" size={13} /> Создать</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats bar */}
       {data && (

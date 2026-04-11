@@ -206,6 +206,29 @@ def handler(event: dict, context) -> dict:
             return {"statusCode": 201, "headers": CORS,
                     "body": json.dumps({"ok": True, "id": drone_id, "name": body["name"]})}
 
+        # ── POST /?action=command — отправить команду манёвра дрону ─────────
+        elif method == "POST" and action == "command":
+            body = json.loads(event.get("body") or "{}")
+            drone_id = body.get("drone_id")
+            maneuver = body.get("maneuver")
+            if not drone_id or not maneuver:
+                return {"statusCode": 400, "headers": CORS,
+                        "body": json.dumps({"error": "drone_id and maneuver required"})}
+            # Логируем команду как событие в системе
+            cur.execute(
+                f"""INSERT INTO {SCHEMA}.events (drone_id, level, category, message)
+                    VALUES (%s, 'info', 'command', %s)""",
+                (drone_id, f"Команда манёвра: {maneuver}")
+            )
+            conn.commit()
+            return {"statusCode": 200, "headers": CORS,
+                    "body": json.dumps({
+                        "ok": True,
+                        "drone_id": drone_id,
+                        "maneuver": maneuver,
+                        "queued_at": datetime.now(timezone.utc).isoformat(),
+                    })}
+
         # ── POST /?action=connect — событие подключения/отключения ───────────
         elif method == "POST" and action == "connect":
             body = json.loads(event.get("body") or "{}")

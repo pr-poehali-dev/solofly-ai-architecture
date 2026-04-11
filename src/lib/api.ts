@@ -90,6 +90,11 @@ export interface DroneConnection {
 
 export const fleet = {
   getAll: () => req<FleetResponse>("fleet", "/"),
+  command: (drone_id: string, maneuver: string) =>
+    req<{ ok: boolean; drone_id: string; maneuver: string; queued_at: string }>("fleet", "/?action=command", {
+      method: "POST",
+      body: JSON.stringify({ drone_id, maneuver }),
+    }),
   getOne: (id: string) =>
     req<{ drone: Drone }>("fleet", `/?id=${encodeURIComponent(id)}`),
   getAnalytics: () =>

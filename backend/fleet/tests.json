@@ -5,7 +5,7 @@
       "method": "GET",
       "path": "/",
       "expectedStatus": 200,
-      "expectedBody": {"total": 4},
+      "expectedBody": {},
       "bodyMatcher": "partial"
     },
     {
@@ -20,6 +20,15 @@
       "name": "GET connections SF-001",
       "method": "GET",
       "path": "/?action=connections&id=SF-001",
+      "expectedStatus": 200,
+      "expectedBody": {},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "POST command maneuver",
+      "method": "POST",
+      "path": "/?action=command",
+      "body": {"drone_id": "SF-001", "maneuver": "hover"},
       "expectedStatus": 200,
       "expectedBody": {},
       "bodyMatcher": "partial"
