@@ -10,7 +10,6 @@ interface SessionListProps {
   search: string;
   filterMode: string;
   filterStatus: string;
-  savedCount: number;
   onSelect: (id: number | null) => void;
   onSearchChange: (v: string) => void;
   onFilterModeChange: (v: string) => void;
@@ -25,7 +24,6 @@ export default function SessionList({
   search,
   filterMode,
   filterStatus,
-  savedCount,
   onSelect,
   onSearchChange,
   onFilterModeChange,
@@ -164,8 +162,6 @@ export default function SessionList({
         </div>
       )}
 
-      {/* Invisible sentinel: savedCount используется снаружи */}
-      <span style={{ display: "none" }}>{savedCount}</span>
     </div>
   );
 }

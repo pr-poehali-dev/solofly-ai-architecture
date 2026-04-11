@@ -91,7 +91,6 @@ export default function ScanArchivePage() {
             search={search}
             filterMode={filterMode}
             filterStatus={filterStatus}
-            savedCount={savedCount}
             onSelect={setSelectedId}
             onSearchChange={setSearch}
             onFilterModeChange={setFilterMode}
