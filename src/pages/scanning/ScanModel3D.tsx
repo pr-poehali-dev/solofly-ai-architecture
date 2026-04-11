@@ -41,14 +41,41 @@ interface ScanModel3DProps {
 
 // ── Генерация облака точек для каждого режима ─────────────────────────────────
 
+// ── Гео-конвертация ───────────────────────────────────────────────────────────
+// scale: сколько метров в одной единице локальной системы координат
+const LOCAL_SCALE_M = 20; // 1 unit = 20 м → диапазон -5..5 unit = 100×100 м
+
+/** Локальные (dx, dz) в метрах → (lat, lon) */
+function localToGeo(
+  dxMeters: number,
+  dzMeters: number,
+  baseLat: number,
+  baseLon: number
+): { lat: number; lon: number } {
+  const R = 6378137; // радиус Земли, м
+  const dLat = dzMeters / R;
+  const dLon = dxMeters / (R * Math.cos((baseLat * Math.PI) / 180));
+  return {
+    lat: baseLat + (dLat * 180) / Math.PI,
+    lon: baseLon + (dLon * 180) / Math.PI,
+  };
+}
+
 function buildPointCloud(
   mode: SensorModeId,
-  progress: number
-): { positions: Float32Array; colors: Float32Array; count: number } {
+  progress: number,
+  meta?: ScanMeta
+): { positions: Float32Array; colors: Float32Array; geo: Float64Array; count: number } {
   const total = Math.floor(4000 * (progress / 100));
 
   const positions = new Float32Array(total * 3);
   const colors    = new Float32Array(total * 3);
+  // geo[i*3+0] = longitude, geo[i*3+1] = latitude, geo[i*3+2] = altitude_m
+  const geo       = new Float64Array(total * 3);
+
+  const baseLat = meta?.lat       ?? 55.751244;
+  const baseLon = meta?.lon       ?? 37.618423;
+  const baseAlt = meta?.altitude_m ?? 0;
 
   const rng = (a: number, b: number) => a + Math.random() * (b - a);
 
@@ -137,9 +164,20 @@ function buildPointCloud(
       colors[i3 + 1] = intensity;
       colors[i3 + 2] = 1;
     }
+
+    // Геопривязка: пересчёт локальных координат в реальные WGS-84
+    {
+      const dxM = positions[i3]     * LOCAL_SCALE_M;
+      const dzM = positions[i3 + 2] * LOCAL_SCALE_M;
+      const dyM = positions[i3 + 1] * LOCAL_SCALE_M; // высота относительно дрона
+      const { lat, lon } = localToGeo(dxM, dzM, baseLat, baseLon);
+      geo[i3]     = lon;
+      geo[i3 + 1] = lat;
+      geo[i3 + 2] = baseAlt + dyM;
+    }
   }
 
-  return { positions, colors, count: total };
+  return { positions, colors, geo, count: total };
 }
 
 // ── Формирует блок метаданных для заголовков файлов ──────────────────────────
@@ -194,11 +232,11 @@ function metaComments(prefix: string, mode: SensorModeId, progress: number, meta
   return lines;
 }
 
-// ── Экспорт PLY (ASCII с метаданными) ────────────────────────────────────────
+// ── Экспорт PLY (ASCII с метаданными + геопривязкой) ─────────────────────────
 function exportPLY(mode: SensorModeId, progress: number, filename: string, meta?: ScanMeta) {
-  const { positions, colors, count } = buildPointCloud(mode, progress);
+  const { positions, colors, geo, count } = buildPointCloud(mode, progress, meta);
+  const hasGeo = meta?.lat != null && meta?.lon != null;
 
-  // Комментарии PLY — каждая строка начинается с "comment"
   const comments = metaComments("comment", mode, progress, meta)
     .map(l => l.replace(/^comment\s*/, "comment "));
 
@@ -207,12 +245,20 @@ function exportPLY(mode: SensorModeId, progress: number, filename: string, meta?
     "format ascii 1.0",
     ...comments,
     `element vertex ${count}`,
+    // Локальные координаты (X=East, Y=Up, Z=North) в метрах
     "property float x",
     "property float y",
     "property float z",
+    // RGB цвет
     "property uchar red",
     "property uchar green",
     "property uchar blue",
+    // Географические координаты WGS-84
+    ...(hasGeo ? [
+      "property double longitude",
+      "property double latitude",
+      "property double altitude",
+    ] : []),
     "end_header",
   ];
 
@@ -222,29 +268,42 @@ function exportPLY(mode: SensorModeId, progress: number, filename: string, meta?
     const r  = Math.round(colors[i3]     * 255);
     const g  = Math.round(colors[i3 + 1] * 255);
     const b  = Math.round(colors[i3 + 2] * 255);
-    rows.push(`${positions[i3].toFixed(4)} ${positions[i3+1].toFixed(4)} ${positions[i3+2].toFixed(4)} ${r} ${g} ${b}`);
+    const xyz = `${positions[i3].toFixed(4)} ${positions[i3+1].toFixed(4)} ${positions[i3+2].toFixed(4)}`;
+    const rgb = `${r} ${g} ${b}`;
+    const geoStr = hasGeo
+      ? ` ${geo[i3].toFixed(8)} ${geo[i3+1].toFixed(8)} ${geo[i3+2].toFixed(3)}`
+      : "";
+    rows.push(`${xyz} ${rgb}${geoStr}`);
   }
 
   download([...header, ...rows].join("\n"), filename, "text/plain");
 }
 
-// ── Экспорт OBJ (с MTL-цветами и метаданными) ────────────────────────────────
+// ── Экспорт OBJ (с геопривязкой + RGB) ───────────────────────────────────────
 function exportOBJ(mode: SensorModeId, progress: number, filename: string, meta?: ScanMeta) {
-  const { positions, colors, count } = buildPointCloud(mode, progress);
+  const { positions, colors, geo, count } = buildPointCloud(mode, progress, meta);
+  const hasGeo = meta?.lat != null && meta?.lon != null;
 
-  // OBJ комментарии — строки начинаются с "#"
   const header = metaComments("#", mode, progress, meta);
-
-  header.push("", `# Vertex count: ${count}`, "");
+  header.push(
+    "",
+    `# Vertex format: v X Y Z R G B${hasGeo ? "  (+ geo comments below each vertex)" : ""}`,
+    `# Vertex count : ${count}`,
+    "",
+  );
 
   const rows: string[] = [];
   for (let i = 0; i < count; i++) {
-    const i3 = i * 3;
-    const r  = colors[i3].toFixed(3);
-    const g  = colors[i3 + 1].toFixed(3);
-    const b  = colors[i3 + 2].toFixed(3);
-    // CloudCompare читает "v x y z r g b" как vertex color
+    const i3  = i * 3;
+    const r   = colors[i3].toFixed(3);
+    const g   = colors[i3 + 1].toFixed(3);
+    const b   = colors[i3 + 2].toFixed(3);
+    // CloudCompare / MeshLab читают "v x y z r g b"
     rows.push(`v ${positions[i3].toFixed(4)} ${positions[i3+1].toFixed(4)} ${positions[i3+2].toFixed(4)} ${r} ${g} ${b}`);
+    // Геопривязка как inline-комментарий к каждой вершине
+    if (hasGeo) {
+      rows.push(`# geo lon=${geo[i3].toFixed(8)} lat=${geo[i3+1].toFixed(8)} alt=${geo[i3+2].toFixed(3)}`);
+    }
   }
 
   download([...header, ...rows].join("\n"), filename, "text/plain");
@@ -308,10 +367,10 @@ export default function ScanModel3D({ mode, progress = 100, height = 360, meta }
     addAxis(new THREE.Vector3(0, 0, 3), 0x4488ff);
 
     // ── Облако точек ──
-    const { positions, colors, count } = buildPointCloud(mode, progress);
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute("color",    new THREE.BufferAttribute(colors, 3));
+    const { positions, colors } = buildPointCloud(mode, progress, meta);
+    const bufGeo = new THREE.BufferGeometry();
+    bufGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    bufGeo.setAttribute("color",    new THREE.BufferAttribute(colors, 3));
 
     const mat = new THREE.PointsMaterial({
       size:         0.08,
@@ -320,7 +379,7 @@ export default function ScanModel3D({ mode, progress = 100, height = 360, meta }
       transparent: true,
       opacity: 0.9,
     });
-    const points = new THREE.Points(geo, mat);
+    const points = new THREE.Points(bufGeo, mat);
     scene.add(points);
 
     // ── Лёгкое вращение для режима LiDAR ──
@@ -407,7 +466,7 @@ export default function ScanModel3D({ mode, progress = 100, height = 360, meta }
       renderer.dispose();
       if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
     };
-  }, [mode, progress, height]);
+  }, [mode, progress, height, meta]);
 
   const stamp    = () => new Date().toISOString().slice(0, 16).replace("T", "_").replace(":", "-");
   const baseName = `solofly_${mode}_${stamp()}`;
@@ -416,11 +475,19 @@ export default function ScanModel3D({ mode, progress = 100, height = 360, meta }
     <div className="relative w-full" style={{ height }}>
       <div ref={mountRef} className="w-full h-full rounded-xl overflow-hidden" />
 
-      {/* Подсказка управления */}
-      <div className="absolute bottom-3 left-3 flex items-center gap-3 pointer-events-none">
+      {/* Подсказка управления + геостатус */}
+      <div className="absolute bottom-3 left-3 flex items-center gap-2 pointer-events-none flex-wrap">
         <span className="tag tag-muted" style={{ fontSize: 9 }}>ЛКМ — вращение</span>
         <span className="tag tag-muted" style={{ fontSize: 9 }}>ПКМ — панорама</span>
         <span className="tag tag-muted" style={{ fontSize: 9 }}>Колесо — масштаб</span>
+        {meta?.lat != null && meta?.lon != null
+          ? <span className="tag tag-green" style={{ fontSize: 9 }}>
+              ✓ WGS-84 · {meta.lat.toFixed(5)}°N {meta.lon.toFixed(5)}°E
+            </span>
+          : <span className="tag tag-muted" style={{ fontSize: 9, opacity: 0.5 }}>
+              нет геопривязки
+            </span>
+        }
       </div>
 
       {/* Кнопки экспорта + кол-во точек */}
