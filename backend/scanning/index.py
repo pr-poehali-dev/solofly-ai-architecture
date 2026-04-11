@@ -7,11 +7,11 @@ POST /?action=save — сохранить результат в S3 и завер
 PATCH /?id=1      — обновить прогресс / завершить
 DELETE /?id=1     — удалить сессию + файл из S3
 """
-import os, json, io, gzip
+import os, json
 from decimal import Decimal
+from datetime import datetime, timezone
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from botocore.exceptions import ClientError
 
 SCHEMA = "t_p93256795_solofly_ai_architect"
 BUCKET = "files"
@@ -290,7 +290,7 @@ def handler(event: dict, context) -> dict:
                     if url.startswith(cdn_prefix):
                         s3_key = url[len(cdn_prefix):]
                         get_s3().delete_object(Bucket=BUCKET, Key=s3_key)
-                except ClientError:
+                except Exception:
                     pass  # не критично — удаляем запись из БД в любом случае
 
             cur.execute(f"DELETE FROM {SCHEMA}.scan_sessions WHERE id = %s", (session_id,))

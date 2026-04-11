@@ -40,7 +40,7 @@ export default function Index() {
       case "api": return <ApiDocsPage />;
       case "support": return <SupportPage />;
       case "integrations": return <IntegrationsPage />;
-      case "scanning":    return <ScanningPage />;
+      case "scanning":    return <ScanningPage onNavigate={navigate} />;
       case "scanarchive": return <ScanArchivePage />;
       default: return <DashboardPage />;
     }

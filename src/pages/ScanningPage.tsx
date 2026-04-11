@@ -6,7 +6,7 @@ import { SENSOR_MODES, getScanLogMessages, type SensorModeId, type ScanLogEntry 
 import ScanVisualizer from "./scanning/ScanVisualizer";
 import ScanSidebar from "./scanning/ScanSidebar";
 
-export default function ScanningPage() {
+export default function ScanningPage({ onNavigate }: { onNavigate?: (page: string) => void } = {}) {
   const { data: fleet } = useLiveFleet(5000);
   const [modeId, setModeId] = useState<SensorModeId>("lidar_terrain");
   const [droneId, setDroneId] = useState("SF-001");
@@ -255,6 +255,7 @@ export default function ScanningPage() {
           scanLog={scanLog}
           savedUrl={savedUrl}
           onClearLog={() => setScanLog([])}
+          onNavigateArchive={onNavigate ? () => onNavigate("scanarchive") : undefined}
         />
       </div>
 

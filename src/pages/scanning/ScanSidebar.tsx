@@ -6,9 +6,10 @@ interface ScanSidebarProps {
   scanLog: ScanLogEntry[];
   savedUrl: string | null;
   onClearLog: () => void;
+  onNavigateArchive?: () => void;
 }
 
-export default function ScanSidebar({ mode, scanLog, savedUrl, onClearLog }: ScanSidebarProps) {
+export default function ScanSidebar({ mode, scanLog, savedUrl, onClearLog, onNavigateArchive }: ScanSidebarProps) {
   return (
     <div className="space-y-4">
       {/* Sensor params */}
@@ -46,12 +47,23 @@ export default function ScanSidebar({ mode, scanLog, savedUrl, onClearLog }: Sca
             <Icon name="CloudCheck" fallback="CheckCircle" size={14} style={{ color: "var(--signal-green)" }} />
             <span className="text-xs font-semibold" style={{ color: "var(--signal-green)" }}>Сохранено в облаке</span>
           </div>
-          <div className="text-xs text-muted-foreground font-mono truncate mb-2">{savedUrl.split("/").slice(-2).join("/")}</div>
-          <a href={savedUrl} target="_blank" rel="noopener noreferrer"
-            className="text-xs flex items-center gap-1.5 w-fit px-3 py-1.5 rounded-lg transition-all"
-            style={{ background: "rgba(0,255,136,0.1)", color: "var(--signal-green)", border: "1px solid rgba(0,255,136,0.25)" }}>
-            <Icon name="ExternalLink" size={11} /> Открыть файл
-          </a>
+          <div className="text-xs text-muted-foreground font-mono truncate mb-3">{savedUrl.split("/").slice(-2).join("/")}</div>
+          <div className="flex gap-2">
+            <a href={savedUrl} target="_blank" rel="noopener noreferrer"
+              className="flex-1 text-xs flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg transition-all"
+              style={{ background: "rgba(0,255,136,0.1)", color: "var(--signal-green)", border: "1px solid rgba(0,255,136,0.25)" }}>
+              <Icon name="ExternalLink" size={11} /> Открыть файл
+            </a>
+            {onNavigateArchive && (
+              <button
+                onClick={onNavigateArchive}
+                className="flex-1 text-xs flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg transition-all"
+                style={{ background: "rgba(0,212,255,0.08)", color: "var(--electric)", border: "1px solid rgba(0,212,255,0.2)" }}
+              >
+                <Icon name="Archive" size={11} /> В архив
+              </button>
+            )}
+          </div>
         </div>
       )}
 
