@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { billing, type Plan } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { useYookassa, openPaymentPage } from "@/components/extensions/yookassa/useYookassa";
+
+const YOOKASSA_URL = "https://functions.poehali.dev/4f179b62-c80c-4402-adda-9a0e8af854c9";
 
 const PLAN_ICONS: Record<string, string> = {
   free:       "Zap",
@@ -33,12 +36,31 @@ interface PricingPageProps {
 
 export default function PricingPage({ onNavigate, standalone = true }: PricingPageProps) {
   const { user } = useAuth();
-  const [plans,    setPlans]    = useState<Plan[]>([]);
-  const [loading,  setLoading]  = useState(true);
-  const [billing2, setBilling2] = useState<"month" | "year">("month");
+  const [plans,     setPlans]     = useState<Plan[]>([]);
+  const [loading,   setLoading]   = useState(true);
+  const [billing2,  setBilling2]  = useState<"month" | "year">("month");
   const [upgrading, setUpgrading] = useState<string | null>(null);
-  const [myPlanId, setMyPlanId] = useState<string>("free");
+  const [myPlanId,  setMyPlanId]  = useState<string>("free");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const { createPayment, isLoading: payLoading } = useYookassa({
+    apiUrl: YOOKASSA_URL,
+    onSuccess: async (res) => {
+      // Активируем тариф в БД после инициации платежа
+      const planId = upgrading;
+      if (planId) {
+        await billing.upgrade(planId, billing2).catch(() => {});
+        setMyPlanId(planId);
+      }
+      setMsg({ ok: true, text: `Заказ ${res.order_number} создан — переходим к оплате` });
+      if (res.payment_url) openPaymentPage(res.payment_url);
+      setUpgrading(null);
+    },
+    onError: () => {
+      setMsg({ ok: false, text: "Ошибка при создании платежа" });
+      setUpgrading(null);
+    },
+  });
 
   useEffect(() => {
     billing.getPlans()
@@ -55,20 +77,44 @@ export default function PricingPage({ onNavigate, standalone = true }: PricingPa
 
   const handleUpgrade = async (planId: string) => {
     if (!user) { onNavigate?.("dashboard"); return; }
+
+    // Enterprise — связь по email
     if (planId === "enterprise") {
       window.open("mailto:sales@solofly.dev?subject=Enterprise тариф SoloFly", "_blank");
       return;
     }
+
+    // Free — просто меняем без оплаты
+    if (planId === "free") {
+      setUpgrading(planId);
+      try {
+        await billing.upgrade(planId, billing2);
+        setMyPlanId(planId);
+        setMsg({ ok: true, text: "Переключено на тариф Старт" });
+        setTimeout(() => setMsg(null), 3000);
+      } catch {
+        setMsg({ ok: false, text: "Ошибка" });
+      } finally { setUpgrading(null); }
+      return;
+    }
+
+    // Платный план — через ЮKassa
+    const plan  = plans.find(p => p.id === planId);
+    const price = billing2 === "year" && plan?.price_year ? plan.price_year : plan?.price_month ?? 0;
     setUpgrading(planId);
     setMsg(null);
-    try {
-      await billing.upgrade(planId, billing2);
-      setMyPlanId(planId);
-      setMsg({ ok: true, text: `Тариф «${plans.find(p => p.id === planId)?.name}» активирован` });
-      setTimeout(() => setMsg(null), 4000);
-    } catch {
-      setMsg({ ok: false, text: "Ошибка при смене тарифа" });
-    } finally {
+
+    const res = await createPayment({
+      amount:      price,
+      userEmail:   user.email,
+      userName:    user.name,
+      description: `SoloFly ${plan?.name} (${billing2 === "year" ? "годовая" : "месячная"} подписка)`,
+      returnUrl:   `${window.location.origin}/?page=pricing`,
+      cartItems:   [{ id: planId, name: `Тариф ${plan?.name}`, price, quantity: 1 }],
+    });
+
+    if (!res?.payment_url) {
+      setMsg({ ok: false, text: "Не удалось создать платёж" });
       setUpgrading(null);
     }
   };
@@ -227,7 +273,7 @@ export default function PricingPage({ onNavigate, standalone = true }: PricingPa
                   {/* Кнопка */}
                   <button
                     onClick={() => handleUpgrade(plan.id)}
-                    disabled={isCurrent || upgrading === plan.id}
+                    disabled={isCurrent || upgrading === plan.id || payLoading}
                     className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2"
                     style={
                       isCurrent
@@ -237,15 +283,15 @@ export default function PricingPage({ onNavigate, standalone = true }: PricingPa
                           : { background: `${color}15`, color, border: `1px solid ${color}30` }
                     }
                   >
-                    {upgrading === plan.id
-                      ? <><Icon name="Loader" size={13} className="animate-spin" /> Активируем…</>
+                    {upgrading === plan.id || (payLoading && upgrading === plan.id)
+                      ? <><Icon name="Loader" size={13} className="animate-spin" /> {plan.id === "free" ? "Переключаем…" : "Создаём платёж…"}</>
                       : isCurrent
                         ? <><Icon name="CheckCircle" size={13} /> Текущий план</>
                         : plan.id === "enterprise"
                           ? <><Icon name="Mail" size={13} /> Связаться с нами</>
                           : plan.id === "free"
                             ? <><Icon name="ArrowDown" size={13} /> Перейти на Старт</>
-                            : <><Icon name="Rocket" size={13} /> Выбрать план</>
+                            : <><Icon name="CreditCard" size={13} /> Оплатить {billing2 === "year" && plan.price_year ? `${plan.price_year.toLocaleString("ru-RU")} ₽/год` : `${plan.price_month.toLocaleString("ru-RU")} ₽/мес`}</>
                     }
                   </button>
                 </div>
