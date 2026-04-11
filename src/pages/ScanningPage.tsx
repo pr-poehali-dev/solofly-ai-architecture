@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import { useLiveFleet } from "@/hooks/useLiveFleet";
 import { scanning as scanningApi } from "@/lib/api";
@@ -16,6 +16,19 @@ export default function ScanningPage({ onNavigate }: { onNavigate?: (page: strin
   const [saving, setSaving] = useState(false);
   const [savedUrl, setSavedUrl] = useState<string | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
+
+  // ref для доступа к актуальным значениям внутри таймеров
+  const scanLogRef        = useRef<ScanLogEntry[]>([]);
+  const activeSessionRef  = useRef<number | null>(null);
+  const modeIdRef         = useRef<SensorModeId>(modeId);
+  const droneIdRef        = useRef<string>(droneId);
+
+  // Синхронизируем рефы
+  useEffect(() => { scanLogRef.current = scanLog; }, [scanLog]);
+  useEffect(() => { activeSessionRef.current = activeSessionId; }, [activeSessionId]);
+  useEffect(() => { modeIdRef.current = modeId; }, [modeId]);
+  useEffect(() => { droneIdRef.current = droneId; }, [droneId]);
 
   const mode = SENSOR_MODES.find(m => m.id === modeId)!;
   const drones = fleet?.drones ?? [];
@@ -39,6 +52,41 @@ export default function ScanningPage({ onNavigate }: { onNavigate?: (page: strin
     return () => clearInterval(interval);
   }, [scanning, modeId]);
 
+  // Автосохранение при завершении скана (progress === 100, scanning === false)
+  useEffect(() => {
+    if (progress < 100 || scanning || savedUrl || saving) return;
+
+    setAutoSaveStatus("saving");
+    addLog("Автосохранение результатов в облако…", "var(--electric)");
+
+    const doSave = async () => {
+      try {
+        const logStrings = scanLogRef.current.map(l => `[${l.ts}] ${l.msg}`);
+        const idToSave   = activeSessionRef.current;
+
+        let saved;
+        if (!idToSave) {
+          const res = await scanningApi.create({ mode: modeIdRef.current, drone_id: droneIdRef.current });
+          activeSessionRef.current = res.id;
+          setActiveSessionId(res.id);
+          saved = await scanningApi.save(res.id, logStrings, 100);
+        } else {
+          saved = await scanningApi.save(idToSave, logStrings, 100);
+        }
+
+        setSavedUrl(saved.url);
+        setAutoSaveStatus("done");
+        addLog(`✓ Автосохранено: ${saved.code} · ${saved.size_kb} КБ`, "var(--signal-green)");
+      } catch {
+        setAutoSaveStatus("error");
+        addLog("Ошибка автосохранения — нажмите «Сохранить в облако» вручную", "var(--danger)");
+      }
+    };
+
+    doSave();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progress, scanning]);
+
   function addLog(msg: string, color: string) {
     const ts = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
     setScanLog(prev => [{ ts, msg, color }, ...prev].slice(0, 20));
@@ -54,6 +102,7 @@ export default function ScanningPage({ onNavigate }: { onNavigate?: (page: strin
     setProgress(0);
     setScanLog([]);
     setSavedUrl(null);
+    setAutoSaveStatus("idle");
     setScanning(true);
     addLog(`Запуск сканирования · ${mode.label} · дрон ${droneId}`, mode.color);
     // Создаём сессию в БД
@@ -147,16 +196,29 @@ export default function ScanningPage({ onNavigate }: { onNavigate?: (page: strin
           </button>
           <button
             onClick={handleSaveToCloud}
-            disabled={progress === 0 || scanning || saving || !!savedUrl}
+            disabled={progress === 0 || scanning || saving || autoSaveStatus === "saving" || !!savedUrl}
             className="px-4 py-2 rounded-lg text-xs flex items-center gap-2 transition-all disabled:opacity-40"
-            style={savedUrl
+            style={savedUrl || autoSaveStatus === "done"
               ? { background: "rgba(0,255,136,0.1)", color: "var(--signal-green)", border: "1px solid rgba(0,255,136,0.3)" }
-              : { background: "rgba(0,212,255,0.1)", color: "var(--electric)", border: "1px solid rgba(0,212,255,0.25)" }
+              : autoSaveStatus === "error"
+                ? { background: "rgba(255,59,48,0.1)", color: "var(--danger)", border: "1px solid rgba(255,59,48,0.3)" }
+                : { background: "rgba(0,212,255,0.1)", color: "var(--electric)", border: "1px solid rgba(0,212,255,0.25)" }
             }
           >
-            <Icon name={savedUrl ? "CloudCheck" : saving ? "Loader" : "Cloud"} fallback="Cloud" size={13}
-              className={saving ? "animate-spin" : ""} />
-            {savedUrl ? "Сохранено" : saving ? "Сохраняю…" : "Сохранить в облако"}
+            <Icon
+              name={savedUrl || autoSaveStatus === "done" ? "CloudCheck" : autoSaveStatus === "saving" || saving ? "Loader" : autoSaveStatus === "error" ? "CloudOff" : "Cloud"}
+              fallback="Cloud" size={13}
+              className={autoSaveStatus === "saving" || saving ? "animate-spin" : ""}
+            />
+            {savedUrl || autoSaveStatus === "done"
+              ? "Сохранено"
+              : autoSaveStatus === "saving"
+                ? "Автосохранение…"
+                : autoSaveStatus === "error"
+                  ? "Повторить"
+                  : saving
+                    ? "Сохраняю…"
+                    : "Сохранить в облако"}
           </button>
           {scanning
             ? <button onClick={handleStop} className="px-4 py-2 rounded-lg text-xs flex items-center gap-2" style={{ background: "rgba(255,59,48,0.12)", color: "var(--danger)", border: "1px solid rgba(255,59,48,0.3)" }}>
@@ -254,6 +316,7 @@ export default function ScanningPage({ onNavigate }: { onNavigate?: (page: strin
           mode={mode}
           scanLog={scanLog}
           savedUrl={savedUrl}
+          autoSaveStatus={autoSaveStatus}
           onClearLog={() => setScanLog([])}
           onNavigateArchive={onNavigate ? () => onNavigate("scanarchive") : undefined}
         />

@@ -5,11 +5,12 @@ interface ScanSidebarProps {
   mode: SensorMode;
   scanLog: ScanLogEntry[];
   savedUrl: string | null;
+  autoSaveStatus: "idle" | "saving" | "done" | "error";
   onClearLog: () => void;
   onNavigateArchive?: () => void;
 }
 
-export default function ScanSidebar({ mode, scanLog, savedUrl, onClearLog, onNavigateArchive }: ScanSidebarProps) {
+export default function ScanSidebar({ mode, scanLog, savedUrl, autoSaveStatus, onClearLog, onNavigateArchive }: ScanSidebarProps) {
   return (
     <div className="space-y-4">
       {/* Sensor params */}
@@ -39,6 +40,30 @@ export default function ScanSidebar({ mode, scanLog, savedUrl, onClearLog, onNav
         </div>
         <p className="text-xs text-muted-foreground mt-3 leading-relaxed">{mode.desc}</p>
       </div>
+
+      {/* Автосохранение — индикатор в процессе */}
+      {autoSaveStatus === "saving" && (
+        <div className="p-4 rounded-xl flex items-center gap-3"
+          style={{ background: "rgba(0,212,255,0.06)", border: "1px solid rgba(0,212,255,0.2)" }}>
+          <Icon name="Loader" size={15} style={{ color: "var(--electric)" }} className="animate-spin shrink-0" />
+          <div>
+            <div className="text-xs font-semibold" style={{ color: "var(--electric)" }}>Автосохранение…</div>
+            <div className="hud-label mt-0.5">Результаты загружаются в облако</div>
+          </div>
+        </div>
+      )}
+
+      {/* Ошибка автосохранения */}
+      {autoSaveStatus === "error" && !savedUrl && (
+        <div className="p-4 rounded-xl flex items-center gap-3"
+          style={{ background: "rgba(255,59,48,0.06)", border: "1px solid rgba(255,59,48,0.2)" }}>
+          <Icon name="CloudOff" size={15} style={{ color: "var(--danger)" }} className="shrink-0" />
+          <div>
+            <div className="text-xs font-semibold" style={{ color: "var(--danger)" }}>Ошибка автосохранения</div>
+            <div className="hud-label mt-0.5">Нажмите «Сохранить в облако» вручную</div>
+          </div>
+        </div>
+      )}
 
       {/* Cloud save banner */}
       {savedUrl && (
