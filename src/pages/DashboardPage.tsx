@@ -1,6 +1,8 @@
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { useLiveFleet } from "@/hooks/useLiveFleet";
 import { useEvents } from "@/hooks/useEvents";
+import LiveMap, { type MapDrone } from "@/components/LiveMap";
 
 const statusMap: Record<string, { label: string; dot: string; cls: string }> = {
   flight:  { label: "В полёте",  dot: "dot-online",  cls: "tag-green"   },
@@ -28,6 +30,19 @@ function relTime(ts: string) {
 
 export default function DashboardPage() {
   const { data: fleet, loading: fleetLoading, error: fleetErr } = useLiveFleet(3000);
+  const [selectedDroneId, setSelectedDroneId] = useState<string | null>(null);
+  const [operatorPos, setOperatorPos] = useState<{ lat: number; lon: number } | null>(null);
+  const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "ok" | "denied">("idle");
+
+  const requestGeo = () => {
+    if (!navigator.geolocation) { setGeoStatus("denied"); return; }
+    setGeoStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      p => { setOperatorPos({ lat: p.coords.latitude, lon: p.coords.longitude }); setGeoStatus("ok"); },
+      () => setGeoStatus("denied"),
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
   const { data: eventsData } = useEvents(8000);
 
   const drones = fleet?.drones ?? [];
@@ -227,6 +242,46 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Карта БПЛА */}
+      <div className="panel rounded-xl overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3"
+          style={{ borderBottom: "1px solid hsl(var(--border))" }}>
+          <div className="flex items-center gap-2">
+            <Icon name="MapPin" size={14} style={{ color: "var(--electric)" }} />
+            <span className="font-semibold text-sm">Позиции дронов · Live GPS</span>
+          </div>
+          <button
+            onClick={requestGeo}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all"
+            style={
+              geoStatus === "ok"
+                ? { background: "rgba(255,59,48,0.1)", color: "#ff3b30", border: "1px solid rgba(255,59,48,0.25)" }
+                : { background: "hsl(var(--input))", color: "hsl(var(--muted-foreground))", border: "1px solid hsl(var(--border))" }
+            }
+          >
+            <Icon
+              name={geoStatus === "loading" ? "Loader" : geoStatus === "ok" ? "Navigation" : "MapPin"}
+              size={12}
+              className={geoStatus === "loading" ? "animate-spin" : ""}
+            />
+            {geoStatus === "ok" ? "Моё место на карте" : geoStatus === "denied" ? "Геолокация запрещена" : "Показать моё место"}
+          </button>
+        </div>
+        <LiveMap
+          drones={drones.filter(d => Number(d.lat) && Number(d.lon)).map(d => ({
+            id: d.id, name: d.name, status: d.status,
+            lat: Number(d.lat), lon: Number(d.lon),
+            altitude: Number(d.altitude), heading: Number(d.heading),
+            speed: Number(d.speed), battery: d.battery,
+          }) satisfies MapDrone)}
+          height={340}
+          operatorPos={operatorPos}
+          selectedDroneId={selectedDroneId}
+          onSelectDrone={setSelectedDroneId}
+          showOperatorGeo
+        />
       </div>
     </div>
   );

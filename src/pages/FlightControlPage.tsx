@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { useLiveFleet } from "@/hooks/useLiveFleet";
+import LiveMap, { type MapDrone } from "@/components/LiveMap";
 
 const maneuvers = [
   { id: "hover", label: "Зависание", icon: "Pause" },
@@ -15,6 +16,38 @@ export default function FlightControlPage() {
   const { data: fleet, loading } = useLiveFleet(3000);
   const [selDroneId, setSelDroneId] = useState("SF-001");
   const [activeManeuver, setActiveManeuver] = useState<string | null>(null);
+  const [operatorPos, setOperatorPos] = useState<{ lat: number; lon: number } | null>(null);
+  const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "ok" | "denied">("idle");
+  const [distanceToDrone, setDistanceToDrone] = useState<number | null>(null);
+
+  // Геолокация оператора
+  const requestGeo = () => {
+    if (!navigator.geolocation) { setGeoStatus("denied"); return; }
+    setGeoStatus("loading");
+    navigator.geolocation.watchPosition(
+      p => {
+        setOperatorPos({ lat: p.coords.latitude, lon: p.coords.longitude });
+        setGeoStatus("ok");
+      },
+      () => setGeoStatus("denied"),
+      { enableHighAccuracy: true }
+    );
+  };
+
+  // Дистанция оператор → дрон (Haversine)
+  useEffect(() => {
+    if (!operatorPos) { setDistanceToDrone(null); return; }
+    const dr = (fleet?.drones ?? []).find(d => d.id === selDroneId);
+    if (!dr || !Number(dr.lat)) { setDistanceToDrone(null); return; }
+    const R  = 6371000;
+    const φ1 = operatorPos.lat * Math.PI / 180;
+    const φ2 = Number(dr.lat) * Math.PI / 180;
+    const Δφ = (Number(dr.lat) - operatorPos.lat) * Math.PI / 180;
+    const Δλ = (Number(dr.lon) - operatorPos.lon) * Math.PI / 180;
+    const a  = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+    const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    setDistanceToDrone(Math.round(dist));
+  }, [operatorPos, selDroneId, fleet]);
 
   const drones = fleet?.drones ?? [];
   const flyingDrones = drones.filter(d => d.status === "flight" || d.status === "standby");
@@ -143,6 +176,8 @@ export default function FlightControlPage() {
               { icon: "Thermometer", label: "Темп. ESC", val: `${drone.temp}°C`, ok: drone.temp < 55 },
               { icon: "Wind", label: "Боковой ветер", val: `${drone.wind} м/с`, ok: drone.wind < 12 },
               { icon: "Wifi", label: "GPS", val: drone.gps, ok: true },
+              { icon: "Navigation", label: "Широта", val: droneRaw ? `${Number(droneRaw.lat).toFixed(6)}°` : "—", ok: true },
+              { icon: "Navigation", label: "Долгота", val: droneRaw ? `${Number(droneRaw.lon).toFixed(6)}°` : "—", ok: true },
             ].map(t => (
               <div key={t.label} className="flex items-center justify-between py-1.5 border-b last:border-0" style={{ borderColor: "hsl(var(--border))" }}>
                 <div className="flex items-center gap-2">
@@ -191,6 +226,73 @@ export default function FlightControlPage() {
           <div className="text-xs text-muted-foreground">ИИ адаптирует ПИД-регуляторы под профиль БПЛА автоматически</div>
         </div>
       </div>}
+
+      {/* Карта позиции */}
+      {drone && (
+        <div className="panel rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3"
+            style={{ borderBottom: "1px solid hsl(var(--border))" }}>
+            <div className="flex items-center gap-3">
+              <Icon name="MapPin" size={14} style={{ color: "var(--electric)" }} />
+              <span className="font-semibold text-sm">Позиция в пространстве</span>
+              {droneRaw && Number(droneRaw.lat) ? (
+                <span className="hud-label font-mono">
+                  {Number(droneRaw.lat).toFixed(5)}° N &nbsp;
+                  {Number(droneRaw.lon).toFixed(5)}° E &nbsp;
+                  ↑{Number(droneRaw.altitude).toFixed(0)} м
+                </span>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-2">
+              {distanceToDrone !== null && (
+                <span className="tag tag-electric flex items-center gap-1.5">
+                  <Icon name="Ruler" size={10} />
+                  {distanceToDrone >= 1000
+                    ? `${(distanceToDrone / 1000).toFixed(2)} км от вас`
+                    : `${distanceToDrone} м от вас`}
+                </span>
+              )}
+              <button
+                onClick={requestGeo}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all"
+                style={
+                  geoStatus === "ok"
+                    ? { background: "rgba(255,59,48,0.1)", color: "#ff3b30", border: "1px solid rgba(255,59,48,0.25)" }
+                    : { background: "hsl(var(--input))", color: "hsl(var(--muted-foreground))", border: "1px solid hsl(var(--border))" }
+                }
+              >
+                <Icon
+                  name={geoStatus === "loading" ? "Loader" : geoStatus === "ok" ? "Navigation" : "MapPin"}
+                  size={11}
+                  className={geoStatus === "loading" ? "animate-spin" : ""}
+                />
+                {geoStatus === "ok" ? "Вы на карте" : geoStatus === "denied" ? "Запрещено" : "Моё место"}
+              </button>
+            </div>
+          </div>
+          <LiveMap
+            drones={(fleet?.drones ?? [])
+              .filter(d => Number(d.lat) && Number(d.lon))
+              .map(d => ({
+                id: d.id, name: d.name, status: d.status,
+                lat: Number(d.lat), lon: Number(d.lon),
+                altitude: Number(d.altitude), heading: Number(d.heading),
+                speed: Number(d.speed), battery: d.battery,
+              }) satisfies MapDrone)
+            }
+            center={droneRaw && Number(droneRaw.lat)
+              ? { lat: Number(droneRaw.lat), lon: Number(droneRaw.lon) }
+              : undefined
+            }
+            zoom={15}
+            height={300}
+            operatorPos={operatorPos}
+            selectedDroneId={selDroneId}
+            onSelectDrone={(id) => id && setSelDroneId(id)}
+            showOperatorGeo
+          />
+        </div>
+      )}
 
       {/* Maneuvers */}
       {drone && <div className="panel rounded-xl p-5">
