@@ -116,6 +116,65 @@ function buildPointCloud(
   return { positions, colors, count: total };
 }
 
+// ── Экспорт PLY (ASCII) ───────────────────────────────────────────────────────
+function exportPLY(mode: SensorModeId, progress: number, filename: string) {
+  const { positions, colors, count } = buildPointCloud(mode, progress);
+  const lines: string[] = [
+    "ply",
+    "format ascii 1.0",
+    `comment SoloFly scan export — mode: ${mode}`,
+    `element vertex ${count}`,
+    "property float x",
+    "property float y",
+    "property float z",
+    "property uchar red",
+    "property uchar green",
+    "property uchar blue",
+    "end_header",
+  ];
+  for (let i = 0; i < count; i++) {
+    const i3 = i * 3;
+    const r = Math.round(colors[i3]     * 255);
+    const g = Math.round(colors[i3 + 1] * 255);
+    const b = Math.round(colors[i3 + 2] * 255);
+    lines.push(
+      `${positions[i3].toFixed(4)} ${positions[i3 + 1].toFixed(4)} ${positions[i3 + 2].toFixed(4)} ${r} ${g} ${b}`
+    );
+  }
+  download(lines.join("\n"), filename, "text/plain");
+}
+
+// ── Экспорт OBJ ───────────────────────────────────────────────────────────────
+function exportOBJ(mode: SensorModeId, progress: number, filename: string) {
+  const { positions, colors, count } = buildPointCloud(mode, progress);
+  const lines: string[] = [
+    `# SoloFly scan export — mode: ${mode}`,
+    `# Points: ${count}`,
+    "",
+  ];
+  // MTL inline через vertex colors в комментарии (OBJ не поддерживает vertex colors нативно,
+  // поэтому кладём цвет как расширение "# color r g b" перед каждой вершиной)
+  for (let i = 0; i < count; i++) {
+    const i3 = i * 3;
+    const r = colors[i3].toFixed(3);
+    const g = colors[i3 + 1].toFixed(3);
+    const b = colors[i3 + 2].toFixed(3);
+    lines.push(`# color ${r} ${g} ${b}`);
+    lines.push(`v ${positions[i3].toFixed(4)} ${positions[i3 + 1].toFixed(4)} ${positions[i3 + 2].toFixed(4)}`);
+  }
+  download(lines.join("\n"), filename, "text/plain");
+}
+
+function download(content: string, filename: string, mime: string) {
+  const blob = new Blob([content], { type: mime });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function ScanModel3D({ mode, progress = 100, height = 360 }: ScanModel3DProps) {
   const mountRef   = useRef<HTMLDivElement>(null);
   const frameRef   = useRef<number>(0);
@@ -265,20 +324,41 @@ export default function ScanModel3D({ mode, progress = 100, height = 360 }: Scan
     };
   }, [mode, progress, height]);
 
+  const stamp    = () => new Date().toISOString().slice(0, 16).replace("T", "_").replace(":", "-");
+  const baseName = `solofly_${mode}_${stamp()}`;
+
   return (
     <div className="relative w-full" style={{ height }}>
       <div ref={mountRef} className="w-full h-full rounded-xl overflow-hidden" />
+
       {/* Подсказка управления */}
       <div className="absolute bottom-3 left-3 flex items-center gap-3 pointer-events-none">
         <span className="tag tag-muted" style={{ fontSize: 9 }}>ЛКМ — вращение</span>
         <span className="tag tag-muted" style={{ fontSize: 9 }}>ПКМ — панорама</span>
         <span className="tag tag-muted" style={{ fontSize: 9 }}>Колесо — масштаб</span>
       </div>
-      {/* Кол-во точек */}
-      <div className="absolute top-3 right-3 pointer-events-none">
+
+      {/* Кнопки экспорта + кол-во точек */}
+      <div className="absolute top-3 right-3 flex items-center gap-1.5">
         <span className="tag tag-electric" style={{ fontSize: 9 }}>
           {Math.floor(4000 * progress / 100).toLocaleString("ru-RU")} точек
         </span>
+        <button
+          onClick={() => exportPLY(mode, progress, `${baseName}.ply`)}
+          className="flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold transition-all"
+          style={{ background: "rgba(0,212,255,0.15)", color: "var(--electric)", border: "1px solid rgba(0,212,255,0.35)" }}
+          title="Скачать облако точек в формате PLY (CloudCompare, MeshLab, Blender)"
+        >
+          ↓ PLY
+        </button>
+        <button
+          onClick={() => exportOBJ(mode, progress, `${baseName}.obj`)}
+          className="flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold transition-all"
+          style={{ background: "rgba(0,255,136,0.12)", color: "var(--signal-green)", border: "1px solid rgba(0,255,136,0.3)" }}
+          title="Скачать в формате OBJ (3ds Max, Maya, AutoCAD)"
+        >
+          ↓ OBJ
+        </button>
       </div>
     </div>
   );
