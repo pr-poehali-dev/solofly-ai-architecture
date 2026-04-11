@@ -1,0 +1,28 @@
+{
+  "tests": [
+    {
+      "name": "GET scan session SCN-001",
+      "method": "GET",
+      "path": "/?id=1",
+      "expectedStatus": 200,
+      "expectedBody": {},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "GET scan sessions list",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "GET non-existing session returns 404",
+      "method": "GET",
+      "path": "/?id=999999",
+      "expectedStatus": 404,
+      "expectedBody": {},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
