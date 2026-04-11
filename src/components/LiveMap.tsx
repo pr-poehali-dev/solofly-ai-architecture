@@ -1,12 +1,11 @@
 /**
  * LiveMap — интерактивная карта OSM с дронами и геолокацией оператора.
- * Canvas-рендер, без сторонних зависимостей.
+ * Работает в любой точке мира: авто-fit по bbox дронов, корректный масштаб с учётом широты.
  */
 import { useEffect, useRef, useState, useCallback } from "react";
 import Icon from "@/components/ui/icon";
-import type { Drone } from "@/lib/api";
 
-// ─── Тайловые утилиты ─────────────────────────────────────────────────────────
+// ─── Тайловые утилиты (WGS-84 → Web Mercator) ─────────────────────────────────
 
 function latLonToWorld(lat: number, lon: number, zoom: number) {
   const n   = Math.pow(2, zoom);
@@ -15,6 +14,56 @@ function latLonToWorld(lat: number, lon: number, zoom: number) {
   const lr  = (lat * Math.PI) / 180;
   const wy  = (1 - Math.log(Math.tan(lr) + 1 / Math.cos(lr)) / Math.PI) / 2 * n * tSz;
   return { wx, wy };
+}
+
+/** Реальные метры на пиксель для данной широты и зума */
+function metersPerPixel(lat: number, zoom: number) {
+  const earthCirc = 40075016.686;
+  return (earthCirc * Math.cos((lat * Math.PI) / 180)) / (256 * Math.pow(2, zoom));
+}
+
+/**
+ * Вычисляет центр и зум так, чтобы все точки влезали в viewport с padding.
+ * Возвращает { center, zoom } для любой точки Земли.
+ */
+function fitBounds(
+  points: { lat: number; lon: number }[],
+  viewW: number,
+  viewH: number,
+  paddingPx = 60
+): { center: { lat: number; lon: number }; zoom: number } {
+  if (points.length === 0) return { center: { lat: 0, lon: 0 }, zoom: 2 };
+  if (points.length === 1) return { center: { lat: points[0].lat, lon: points[0].lon }, zoom: 14 };
+
+  const lats = points.map(p => p.lat);
+  const lons = points.map(p => p.lon);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+
+  const centerLat = (minLat + maxLat) / 2;
+  const centerLon = (minLon + maxLon) / 2;
+
+  // Подбираем зум при котором все точки влезают
+  let bestZoom = 2;
+  for (let z = 18; z >= 2; z--) {
+    const { wx: wx1, wy: wy1 } = latLonToWorld(maxLat, minLon, z);
+    const { wx: wx2, wy: wy2 } = latLonToWorld(minLat, maxLon, z);
+    const spanX = Math.abs(wx2 - wx1);
+    const spanY = Math.abs(wy2 - wy1);
+    if (spanX <= viewW - paddingPx * 2 && spanY <= viewH - paddingPx * 2) {
+      bestZoom = z;
+      break;
+    }
+  }
+
+  return { center: { lat: centerLat, lon: centerLon }, zoom: bestZoom };
+}
+
+/** Красивая строка координат с N/S и E/W для любой точки мира */
+function fmtCoord(lat: number, lon: number): string {
+  const latDir = lat >= 0 ? "N" : "S";
+  const lonDir = lon >= 0 ? "E" : "W";
+  return `${Math.abs(lat).toFixed(5)}°${latDir}  ${Math.abs(lon).toFixed(5)}°${lonDir}`;
 }
 
 // ─── Типы ─────────────────────────────────────────────────────────────────────
@@ -58,7 +107,7 @@ const TILE_CACHE = new Map<string, HTMLImageElement>();
 export default function LiveMap({
   drones,
   center: centerProp,
-  zoom: zoomProp = 14,
+  zoom: zoomProp,
   height = 320,
   operatorPos,
   selectedDroneId,
@@ -66,41 +115,63 @@ export default function LiveMap({
   showOperatorGeo = false,
   className = "",
 }: LiveMapProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animRef   = useRef<number>(0);
-  const dragRef   = useRef<{ x: number; y: number; cx: number; cy: number } | null>(null);
-  const tickRef   = useRef(0);
+  const canvasRef  = useRef<HTMLCanvasElement>(null);
+  const animRef    = useRef<number>(0);
+  const dragRef    = useRef<{ x: number; y: number; cx: number; cy: number } | null>(null);
+  const tickRef    = useRef(0);
+  const fittedRef  = useRef(false); // авто-fit выполнен один раз
 
-  // Центр: первый летящий дрон → все дроны → Москва
-  const defaultCenter = useCallback(() => {
-    const flying = drones.find(d => d.status === "flight" && d.lat && d.lon);
-    if (flying) return { lat: flying.lat, lon: flying.lon };
-    const withPos = drones.find(d => d.lat && d.lon);
-    if (withPos) return { lat: withPos.lat, lon: withPos.lon };
-    return { lat: 55.751, lon: 37.618 };
-  }, [drones]);
+  const validDrones = drones.filter(d => d.lat && d.lon);
 
-  const [center, setCenter]  = useState(() => centerProp ?? defaultCenter());
-  const [zoom,   setZoom]    = useState(zoomProp);
+  // Начальный центр/зум — только от prop, позже пересчитывается fitAll
+  const [center, setCenter] = useState<{ lat: number; lon: number }>(
+    () => centerProp ?? { lat: 0, lon: 0 }
+  );
+  const [zoom, setZoom] = useState(zoomProp ?? 2);
+
   const centerRef = useRef(center);
   const zoomRef   = useRef(zoom);
   centerRef.current = center;
   zoomRef.current   = zoom;
 
-  // При смене drones, если нет явного центра — пересчитать
+  /** Вписать всех дронов (+ оператора) в viewport */
+  const fitAll = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const pts = [...validDrones.map(d => ({ lat: d.lat, lon: d.lon }))];
+    if (operatorPos) pts.push(operatorPos);
+    if (pts.length === 0) return;
+
+    const { center: c, zoom: z } = fitBounds(pts, canvas.offsetWidth, canvas.offsetHeight, 70);
+    setCenter(c);
+    setZoom(z);
+  }, [validDrones, operatorPos]);
+
+  // Авто-fit при первом получении дронов
   useEffect(() => {
-    if (!centerProp) setCenter(defaultCenter());
-  }, [centerProp, defaultCenter]);
+    if (!fittedRef.current && validDrones.length > 0) {
+      fittedRef.current = true;
+      fitAll();
+    }
+  }, [validDrones.length, fitAll]);
+
+  // Если prop явно задан — следовать ему
+  useEffect(() => {
+    if (centerProp) setCenter(centerProp);
+  }, [centerProp]);
+  useEffect(() => {
+    if (zoomProp != null) setZoom(zoomProp);
+  }, [zoomProp]);
 
   // ── Рендер ──────────────────────────────────────────────────────────────────
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
-    const W  = canvas.width;
-    const H  = canvas.height;
-    const cx = centerRef.current;
-    const z  = zoomRef.current;
+    const W   = canvas.width;
+    const H   = canvas.height;
+    const cx  = centerRef.current;
+    const z   = zoomRef.current;
     const tSz = 256;
     const n   = Math.pow(2, z);
 
@@ -122,14 +193,13 @@ export default function LiveMap({
         const ty = tY0 + dy;
         if (ty < 0 || ty >= n) continue;
 
-        const px = offX + dx * tSz;
-        const py = offY + dy * tSz;
+        const px  = offX + dx * tSz;
+        const py  = offY + dy * tSz;
         const key = `${z}/${tx}/${ty}`;
 
         const cached = TILE_CACHE.get(key);
         if (cached?.complete && cached.naturalWidth > 0) {
           ctx.drawImage(cached, px, py, tSz, tSz);
-          // тёмный фильтр под тему
           ctx.fillStyle = "rgba(5,9,14,0.52)";
           ctx.fillRect(px, py, tSz, tSz);
         } else {
@@ -168,11 +238,10 @@ export default function LiveMap({
       const { x, y } = toPixel(drone.lat, drone.lon);
       if (x < -40 || x > W + 40 || y < -40 || y > H + 40) continue;
 
-      const color    = STATUS_COLOR[drone.status] ?? "#64748b";
+      const color      = STATUS_COLOR[drone.status] ?? "#64748b";
       const isSelected = drone.id === selectedDroneId;
-      const flying   = drone.status === "flight";
+      const flying     = drone.status === "flight";
 
-      // Пульсация для летящих
       if (flying) {
         const pulse = (Math.sin(t * 0.06 + drones.indexOf(drone)) * 0.5 + 0.5);
         const r     = 18 + pulse * 8;
@@ -182,7 +251,6 @@ export default function LiveMap({
         ctx.fill();
       }
 
-      // Вектор курса
       if (flying && drone.heading != null) {
         const rad = (drone.heading - 90) * Math.PI / 180;
         const len = 28 + (drone.speed / 100) * 16;
@@ -198,7 +266,6 @@ export default function LiveMap({
         ctx.globalAlpha = 1;
       }
 
-      // Выделение
       if (isSelected) {
         ctx.beginPath();
         ctx.arc(x, y, 16, 0, Math.PI * 2);
@@ -209,7 +276,6 @@ export default function LiveMap({
         ctx.globalAlpha = 1;
       }
 
-      // Иконка дрона (ромб)
       const sz = flying ? 9 : 7;
       ctx.beginPath();
       ctx.moveTo(x, y - sz);
@@ -217,27 +283,25 @@ export default function LiveMap({
       ctx.lineTo(x, y + sz);
       ctx.lineTo(x - sz * 0.7, y);
       ctx.closePath();
-      ctx.fillStyle = color;
+      ctx.fillStyle  = color;
       ctx.shadowColor = color;
       ctx.shadowBlur  = flying ? 12 : 6;
       ctx.fill();
       ctx.shadowBlur  = 0;
 
-      // Метка
-      const label = drone.name;
-      const altStr = flying ? ` ${drone.altitude.toFixed(0)}м` : "";
+      const label     = drone.name;
+      const altStr    = flying ? ` ${drone.altitude.toFixed(0)}м` : "";
       const fullLabel = label + altStr;
-      ctx.font      = isSelected ? "bold 11px monospace" : "10px monospace";
-      const tw      = ctx.measureText(fullLabel).width;
-      const lx      = x - tw / 2;
-      const ly      = y + sz + 16;
+      ctx.font        = isSelected ? "bold 11px monospace" : "10px monospace";
+      const tw        = ctx.measureText(fullLabel).width;
+      const lx        = x - tw / 2;
+      const ly        = y + sz + 16;
 
       ctx.fillStyle = "rgba(5,9,14,0.8)";
       ctx.fillRect(lx - 4, ly - 11, tw + 8, 15);
       ctx.fillStyle = color;
       ctx.fillText(fullLabel, lx, ly);
 
-      // Батарея (для летящих)
       if (flying && drone.battery != null) {
         const bw  = 28;
         const bh  = 4;
@@ -258,51 +322,54 @@ export default function LiveMap({
         const pulse = (Math.sin(t * 0.05) * 0.5 + 0.5);
         ctx.beginPath();
         ctx.arc(x, y, 20 + pulse * 6, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,59,48,0.07)";
+        ctx.fillStyle = "rgba(0,212,255,0.07)";
         ctx.fill();
 
         ctx.beginPath();
         ctx.arc(x, y, 7, 0, Math.PI * 2);
-        ctx.fillStyle = "#ff3b30";
-        ctx.shadowColor = "#ff3b30";
-        ctx.shadowBlur  = 10;
+        ctx.fillStyle   = "#00d4ff";
+        ctx.shadowColor = "#00d4ff";
+        ctx.shadowBlur  = 12;
         ctx.fill();
         ctx.shadowBlur  = 0;
 
-        ctx.font      = "10px monospace";
-        ctx.fillStyle = "#ff3b30";
+        ctx.font      = "bold 10px monospace";
+        ctx.fillStyle = "#00d4ff";
         ctx.fillText("ВЫ", x + 10, y + 4);
       }
     }
 
-    // ── Перекрестие центра ──
+    // ── Перекрестие ──
     ctx.strokeStyle = "rgba(0,212,255,0.2)";
     ctx.lineWidth   = 1;
     ctx.beginPath(); ctx.moveTo(W/2 - 12, H/2); ctx.lineTo(W/2 + 12, H/2); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(W/2, H/2 - 12); ctx.lineTo(W/2, H/2 + 12); ctx.stroke();
 
-    // ── Масштаб ──
-    const scaleM  = Math.round(500 * Math.pow(2, 14 - z));
-    const { wx: wx1 } = latLonToWorld(cx.lat, cx.lon - (scaleM / 111320), z);
-    const { wx: wx2 } = latLonToWorld(cx.lat, cx.lon + (scaleM / 111320), z);
-    const scalePx = Math.abs(wx2 - wx1);
-    const scaleX  = 14;
-    const scaleY  = H - 14;
+    // ── Масштаб с учётом широты (haversine) ──
+    const mpp      = metersPerPixel(cx.lat, z);
+    const targetM  = [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000]
+      .find(m => m / mpp >= 60) ?? 100000;
+    const scalePx  = targetM / mpp;
+    const scaleX   = 14;
+    const scaleY   = H - 14;
     ctx.strokeStyle = "rgba(0,212,255,0.7)";
     ctx.lineWidth   = 2;
     ctx.beginPath();
-    ctx.moveTo(scaleX, scaleY);
-    ctx.lineTo(scaleX + scalePx, scaleY);
+    ctx.moveTo(scaleX, scaleY); ctx.lineTo(scaleX + scalePx, scaleY);
+    ctx.moveTo(scaleX, scaleY - 5); ctx.lineTo(scaleX, scaleY + 5);
+    ctx.moveTo(scaleX + scalePx, scaleY - 5); ctx.lineTo(scaleX + scalePx, scaleY + 5);
     ctx.stroke();
     ctx.fillStyle = "rgba(0,212,255,0.8)";
     ctx.font      = "10px monospace";
-    const scaleLabel = scaleM >= 1000 ? `${(scaleM/1000).toFixed(1)} км` : `${scaleM} м`;
-    ctx.fillText(scaleLabel, scaleX, scaleY - 5);
+    const scaleLabel = targetM >= 1000 ? `${(targetM / 1000).toFixed(0)} км` : `${targetM} м`;
+    ctx.fillText(scaleLabel, scaleX, scaleY - 7);
 
-    // ── Координаты ──
-    ctx.fillStyle = "rgba(0,212,255,0.45)";
-    ctx.font      = "9px monospace";
-    ctx.fillText(`${cx.lat.toFixed(5)}°N  ${cx.lon.toFixed(5)}°E`, W - 168, H - 6);
+    // ── Координаты центра (N/S, E/W — любая точка мира) ──
+    const coordStr = fmtCoord(cx.lat, cx.lon);
+    ctx.fillStyle  = "rgba(0,212,255,0.45)";
+    ctx.font       = "9px monospace";
+    const cw = ctx.measureText(coordStr).width;
+    ctx.fillText(coordStr, W - cw - 8, H - 6);
 
     tickRef.current++;
     animRef.current = requestAnimationFrame(draw);
@@ -324,29 +391,53 @@ export default function LiveMap({
 
   // ── Drag to pan ──────────────────────────────────────────────────────────────
   const onMouseDown = (e: React.MouseEvent) => {
-    dragRef.current = {
-      x: e.clientX, y: e.clientY,
-      cx: centerRef.current.lat,
-      cy: centerRef.current.lon,
-    };
+    dragRef.current = { x: e.clientX, y: e.clientY, cx: centerRef.current.lat, cy: centerRef.current.lon };
   };
   const onMouseMove = (e: React.MouseEvent) => {
     if (!dragRef.current) return;
-    const z    = zoomRef.current;
-    const n    = Math.pow(2, z);
-    const tSz  = 256;
-    const dx   = e.clientX - dragRef.current.x;
-    const dy   = e.clientY - dragRef.current.y;
-    const dLon = -(dx / (n * tSz)) * 360;
-    const dLat =  (dy / (n * tSz)) * 180;
-    setCenter({ lat: dragRef.current.cx + dLat, lon: dragRef.current.cy + dLon });
+    const z   = zoomRef.current;
+    const n   = Math.pow(2, z);
+    const tSz = 256;
+    const dx  = e.clientX - dragRef.current.x;
+    const dy  = e.clientY - dragRef.current.y;
+    // Точный пересчёт пикселей в градусы с учётом широты
+    const mpp  = metersPerPixel(dragRef.current.cx, z);
+    const dLon = -(dx * mpp) / (111320 * Math.cos((dragRef.current.cx * Math.PI) / 180));
+    const dLat =  (dy * mpp) / 111320;
+    // Зажим: широта [-85, 85] (предел Web Mercator)
+    const newLat = Math.max(-85, Math.min(85, dragRef.current.cx + dLat));
+    const newLon = ((dragRef.current.cy + dLon + 180) % 360 + 360) % 360 - 180;
+    setCenter({ lat: newLat, lon: newLon });
+    // Подавляем неиспользуемую переменную
+    void (n * tSz);
   };
   const onMouseUp = () => { dragRef.current = null; };
+
+  // ── Touch support ────────────────────────────────────────────────────────────
+  const touchRef = useRef<{ x: number; y: number; cx: number; cy: number } | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchRef.current = { x: t.clientX, y: t.clientY, cx: centerRef.current.lat, cy: centerRef.current.lon };
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!touchRef.current) return;
+    e.preventDefault();
+    const t   = e.touches[0];
+    const mpp = metersPerPixel(touchRef.current.cx, zoomRef.current);
+    const dx  = t.clientX - touchRef.current.x;
+    const dy  = t.clientY - touchRef.current.y;
+    const dLon = -(dx * mpp) / (111320 * Math.cos((touchRef.current.cx * Math.PI) / 180));
+    const dLat =  (dy * mpp) / 111320;
+    const newLat = Math.max(-85, Math.min(85, touchRef.current.cx + dLat));
+    const newLon = ((touchRef.current.cy + dLon + 180) % 360 + 360) % 360 - 180;
+    setCenter({ lat: newLat, lon: newLon });
+  };
+  const onTouchEnd = () => { touchRef.current = null; };
 
   // ── Zoom wheel ───────────────────────────────────────────────────────────────
   const onWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    setZoom(z => Math.min(18, Math.max(10, z + (e.deltaY < 0 ? 1 : -1))));
+    setZoom(z => Math.min(18, Math.max(2, z + (e.deltaY < 0 ? 1 : -1))));
   };
 
   const centerOnDrone = (drone: MapDrone) => {
@@ -359,7 +450,7 @@ export default function LiveMap({
   return (
     <div className={`flex flex-col ${className}`} style={{ height }}>
       {/* Toolbar */}
-      <div className="flex items-center gap-2 px-4 py-2.5 shrink-0"
+      <div className="flex items-center gap-2 px-4 py-2.5 shrink-0 flex-wrap"
         style={{ borderBottom: "1px solid hsl(var(--border))" }}>
         <Icon name="Map" size={14} style={{ color: "var(--electric)" }} />
         <span className="text-xs font-semibold">Карта БПЛА</span>
@@ -370,8 +461,8 @@ export default function LiveMap({
         )}
 
         {/* Быстрый переход к дрону */}
-        <div className="flex gap-1 ml-2">
-          {drones.filter(d => d.lat && d.lon).map(d => (
+        <div className="flex gap-1 ml-2 flex-wrap">
+          {validDrones.map(d => (
             <button
               key={d.id}
               onClick={() => centerOnDrone(d)}
@@ -381,30 +472,41 @@ export default function LiveMap({
                 : { background: "hsl(var(--input))", color: "hsl(var(--muted-foreground))" }
               }
             >
-              {d.name.split("-")[0]}-{d.id.split("-")[1]}
+              {d.name}
             </button>
           ))}
         </div>
 
-        {/* Зум */}
         <div className="flex items-center gap-1 ml-auto">
+          {/* Показать всех */}
+          <button
+            onClick={fitAll}
+            title="Показать всех"
+            className="px-2 py-1 rounded text-xs flex items-center gap-1 transition-all"
+            style={{ background: "hsl(var(--input))", color: "hsl(var(--muted-foreground))", border: "1px solid hsl(var(--border))" }}
+          >
+            <Icon name="Maximize2" size={11} />
+          </button>
+
+          {/* Центр на операторе */}
+          {showOperatorGeo && operatorPos && (
+            <button
+              onClick={() => setCenter(operatorPos)}
+              title="Моя позиция"
+              className="px-2 py-1 rounded text-xs flex items-center gap-1 transition-all"
+              style={{ background: "rgba(0,212,255,0.1)", color: "var(--electric)", border: "1px solid rgba(0,212,255,0.3)" }}
+            >
+              <Icon name="Navigation" size={11} /> Я
+            </button>
+          )}
+
+          {/* Зум */}
           <button onClick={() => setZoom(z => Math.min(18, z + 1))}
             className="w-6 h-6 flex items-center justify-center rounded panel text-xs font-bold hover:opacity-80">+</button>
           <span className="hud-label w-6 text-center">{zoom}</span>
-          <button onClick={() => setZoom(z => Math.max(10, z - 1))}
+          <button onClick={() => setZoom(z => Math.max(2, z - 1))}
             className="w-6 h-6 flex items-center justify-center rounded panel text-xs font-bold hover:opacity-80">−</button>
         </div>
-
-        {/* Кнопка геолокации */}
-        {showOperatorGeo && operatorPos && (
-          <button
-            onClick={() => setCenter(operatorPos)}
-            className="px-2 py-1 rounded text-xs flex items-center gap-1 transition-all"
-            style={{ background: "rgba(255,59,48,0.1)", color: "#ff3b30", border: "1px solid rgba(255,59,48,0.25)" }}
-          >
-            <Icon name="Navigation" size={11} /> Я
-          </button>
-        )}
       </div>
 
       {/* Canvas */}
@@ -417,6 +519,9 @@ export default function LiveMap({
           onMouseUp={onMouseUp}
           onMouseLeave={onMouseUp}
           onWheel={onWheel}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
         />
 
         {/* Легенда */}
@@ -430,7 +535,7 @@ export default function LiveMap({
           ))}
           {operatorPos && (
             <div className="flex items-center gap-2 mt-1 pt-1" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: "var(--electric)" }} />
               <span className="hud-label" style={{ fontSize: 9 }}>Оператор</span>
             </div>
           )}
