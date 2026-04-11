@@ -27,7 +27,7 @@ export default function LandingHero({ onNavigate, onOpenDemo }: LandingHeroProps
         <h1 className="text-6xl md:text-7xl font-bold leading-tight mb-6 tracking-tight">
           <span className="gradient-text">SoloFly</span><br />
           <span className="text-4xl md:text-5xl font-normal" style={{ color: "hsl(var(--muted-foreground))" }}>
-            Экспериментальная система автономного управления БПЛА
+            Интеллектуальная система автономного управления беспилотным летательным аппаратом
           </span>
         </h1>
 
