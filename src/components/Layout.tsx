@@ -1,5 +1,6 @@
 import Icon from "@/components/ui/icon";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface LayoutProps {
   currentPage: string;
@@ -36,6 +37,11 @@ const mobileTabItems = [
 
 export default function Layout({ currentPage, onNavigate, children, isLanding }: LayoutProps) {
   const isMobile = useIsMobile();
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+  };
 
   if (isLanding) {
     return (
@@ -77,10 +83,16 @@ export default function Layout({ currentPage, onNavigate, children, isLanding }:
             <span className="font-bold text-sm tracking-tight">Solo<span className="gradient-text">Fly</span></span>
             <span className="tag tag-green ml-1" style={{ fontSize: 8 }}>LIVE</span>
           </div>
-          {/* Текущая страница */}
-          <span className="text-xs text-muted-foreground">
-            {navItems.find(n => n.id === currentPage)?.label ?? ""}
-          </span>
+          {/* Имя пользователя */}
+          {user && (
+            <div className="flex items-center gap-1.5">
+              <div className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold"
+                style={{ background: user.avatar_color, color: "hsl(210 25% 4%)" }}>
+                {user.name.charAt(0).toUpperCase() || "?"}
+              </div>
+              <span className="text-xs text-muted-foreground">{user.name.split(" ")[0]}</span>
+            </div>
+          )}
         </header>
 
         {/* Контент — паддинг снизу под таббар */}
@@ -158,18 +170,21 @@ export default function Layout({ currentPage, onNavigate, children, isLanding }:
           ))}
         </nav>
 
-        {/* Bottom */}
+        {/* Bottom — профиль */}
         <div className="p-3" style={{ borderTop: "1px solid hsl(var(--sidebar-border))" }}>
-          <div className="flex items-center gap-2.5 p-3 rounded-lg mb-1" style={{ background: "hsl(var(--sidebar-accent))" }}>
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(0,212,255,0.15)" }}>
-              <Icon name="User" size={14} style={{ color: "var(--electric)" }} />
+          {user && (
+            <div className="flex items-center gap-2.5 p-3 rounded-lg mb-1" style={{ background: "hsl(var(--sidebar-accent))" }}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 font-bold text-xs"
+                style={{ background: user.avatar_color, color: "hsl(210 25% 4%)" }}>
+                {user.name.charAt(0).toUpperCase() || "?"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold truncate">{user.name}</div>
+                <div className="hud-label truncate">{user.role === "admin" ? "Администратор" : "Оператор"}</div>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-semibold truncate">Оператор #1</div>
-              <div className="hud-label truncate">Администратор</div>
-            </div>
-          </div>
-          <button onClick={() => onNavigate("landing")} className="nav-item w-full">
+          )}
+          <button onClick={handleLogout} className="nav-item w-full">
             <Icon name="LogOut" size={15} />
             Выйти
           </button>

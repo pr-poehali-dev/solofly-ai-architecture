@@ -1,5 +1,7 @@
 import { useState } from "react";
 import Layout from "@/components/Layout";
+import { useAuth } from "@/contexts/AuthContext";
+import AuthPage from "./AuthPage";
 import LandingPage from "./LandingPage";
 import DashboardPage from "./DashboardPage";
 import MissionsPage from "./MissionsPage";
@@ -22,10 +24,31 @@ type Page =
   | "security" | "api" | "support" | "integrations" | "scanning" | "scanarchive" | "ucp";
 
 export default function Index() {
+  const { user, loading } = useAuth();
   const [page, setPage] = useState<Page>("landing");
 
   const navigate = (p: string) => setPage(p as Page);
   const isLanding = page === "landing";
+
+  // Показываем спиннер пока восстанавливается сессия
+  if (loading) {
+    return (
+      <div className="min-h-screen grid-bg flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse"
+            style={{ background: "rgba(0,212,255,0.15)", border: "1px solid rgba(0,212,255,0.3)" }}>
+            <span style={{ color: "var(--electric)", fontSize: 28 }}>✈</span>
+          </div>
+          <p className="hud-label animate-pulse">Загрузка SoloFly…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Не авторизован — показываем страницу входа/регистрации
+  if (!user) {
+    return <AuthPage onSuccess={() => setPage("dashboard")} />;
+  }
 
   const renderPage = () => {
     switch (page) {

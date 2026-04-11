@@ -8,6 +8,7 @@ const URLS = {
   events:    "https://functions.poehali.dev/9aa3b44f-f711-4afb-897f-610623caf2da",
   scanning:  "https://functions.poehali.dev/8f8ffd51-a285-42f6-9148-f178ea5947c4",
   presence:  "https://functions.poehali.dev/5b06fdf4-7c9d-4b21-838b-0b3498110a8d",
+  auth:      "https://functions.poehali.dev/673a3df3-6c29-4329-8ed8-5e321ed71a9d",
 };
 
 async function req<T>(
@@ -409,4 +410,40 @@ export const presence = {
     req<{ ok: boolean }>("presence", `/?operator_id=${encodeURIComponent(operator_id)}`, {
       method: "DELETE",
     }),
+};
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+export interface User {
+  id:           number;
+  email:        string;
+  name:         string;
+  role:         string;
+  avatar_color: string;
+  created_at?:  string;
+  last_login?:  string;
+}
+
+function authReq<T>(action: string, options: RequestInit = {}): Promise<T> {
+  const token = localStorage.getItem("sf_token");
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["X-Auth-Token"] = token;
+  return req<T>("auth", `/?action=${action}`, { ...options, headers: { ...headers, ...(options.headers as Record<string, string> ?? {}) } });
+}
+
+export const authApi = {
+  register: (data: { email: string; password: string; name?: string }) =>
+    authReq<{ ok: boolean; token: string; user: User }>("register", {
+      method: "POST",
+      body:   JSON.stringify(data),
+    }),
+  login: (data: { email: string; password: string }) =>
+    authReq<{ ok: boolean; token: string; user: User }>("login", {
+      method: "POST",
+      body:   JSON.stringify(data),
+    }),
+  me: () =>
+    authReq<{ user: User }>("me"),
+  logout: () =>
+    authReq<{ ok: boolean }>("logout", { method: "POST" }),
 };

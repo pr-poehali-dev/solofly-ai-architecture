@@ -1,0 +1,30 @@
+{
+  "tests": [
+    {
+      "name": "POST register",
+      "method": "POST",
+      "path": "/?action=register",
+      "body": {"email": "test@solofly.dev", "password": "test123", "name": "Тест"},
+      "expectedStatus": 201,
+      "expectedBody": {},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "POST login",
+      "method": "POST",
+      "path": "/?action=login",
+      "body": {"email": "test@solofly.dev", "password": "test123"},
+      "expectedStatus": 200,
+      "expectedBody": {},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "GET me no token",
+      "method": "GET",
+      "path": "/?action=me",
+      "expectedStatus": 401,
+      "expectedBody": {},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
