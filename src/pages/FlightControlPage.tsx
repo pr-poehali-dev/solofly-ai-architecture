@@ -5,7 +5,7 @@ import LiveMap, { type MapDrone } from "@/components/LiveMap";
 import { fleet } from "@/lib/api";
 import AIExplainPanel from "@/components/AIExplainPanel";
 import MobileFlightControl from "@/components/MobileFlightControl";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const maneuvers = [
   { id: "hover", label: "Зависание", icon: "Pause" },
@@ -17,7 +17,7 @@ const maneuvers = [
 ];
 
 export default function FlightControlPage() {
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const { data: fleetData, loading, refresh } = useLiveFleet(3000);
   const [selDroneId, setSelDroneId] = useState("SF-001");
   const [activeManeuver, setActiveManeuver] = useState<string | null>(null);

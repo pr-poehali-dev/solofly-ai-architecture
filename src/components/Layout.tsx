@@ -1,5 +1,5 @@
 import Icon from "@/components/ui/icon";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface LayoutProps {
   currentPage: string;
@@ -35,7 +35,7 @@ const mobileTabItems = [
 ];
 
 export default function Layout({ currentPage, onNavigate, children, isLanding }: LayoutProps) {
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
 
   if (isLanding) {
     return (

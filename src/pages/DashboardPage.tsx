@@ -4,7 +4,7 @@ import { useLiveFleet } from "@/hooks/useLiveFleet";
 import { useEvents } from "@/hooks/useEvents";
 import LiveMap, { type MapDrone } from "@/components/LiveMap";
 import { useOperatorPresence } from "@/hooks/useOperatorPresence";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const statusMap: Record<string, { label: string; dot: string; cls: string }> = {
   flight:  { label: "В полёте",  dot: "dot-online",  cls: "tag-green"   },
@@ -78,7 +78,7 @@ export default function DashboardPage() {
     [drones]
   );
 
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const now   = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
   const today = new Date().toLocaleDateString("ru-RU", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase();
 
