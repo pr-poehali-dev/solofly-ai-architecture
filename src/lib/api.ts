@@ -46,6 +46,15 @@ export interface Drone {
   hw_battery_cap: number;
   hw_max_speed: number;
   updated_at: string;
+  // ЦУП-поля
+  registered_by?: string;
+  firmware_ver?: string;
+  serial_num?: string;
+  notes?: string;
+  total_flights?: number;
+  total_hours?: number;
+  total_km?: number;
+  last_seen_at?: string;
   current_mission?: {
     code: string; name: string; type: string; status: string; progress: number;
   } | null;
@@ -58,14 +67,58 @@ export interface FleetResponse {
   flying: number;
 }
 
+export interface FleetAnalytics {
+  fleet: Drone[];
+  stats: {
+    flying: number; standby: number; charging: number; offline: number; errors: number;
+    avg_battery: number; min_battery: number;
+    total_flights: number; total_hours: number; total_km: number;
+  };
+  alerts: { drone_id: string; level: string; category: string; message: string; ts: string }[];
+  sensors: { avg_gps: number | null; avg_cpu: number | null; avg_ai: number | null };
+}
+
+export interface DroneConnection {
+  id: number;
+  drone_id: string;
+  event: string;
+  ip_addr: string | null;
+  signal_db: number | null;
+  link_quality: number | null;
+  ts: string;
+}
+
 export const fleet = {
   getAll: () => req<FleetResponse>("fleet", "/"),
   getOne: (id: string) =>
     req<{ drone: Drone }>("fleet", `/?id=${encodeURIComponent(id)}`),
+  getAnalytics: () =>
+    req<FleetAnalytics>("fleet", "/?action=analytics"),
+  getConnections: (id: string) =>
+    req<{ connections: DroneConnection[]; total: number }>("fleet", `/?action=connections&id=${encodeURIComponent(id)}`),
   update: (data: Partial<Drone> & { id: string }) =>
     req<{ ok: boolean }>("fleet", "/", {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+  register: (data: {
+    id: string; name: string; role?: string;
+    hw_weight?: number; hw_motors?: number; hw_battery_cap?: number; hw_max_speed?: number;
+    ai_model?: string; firmware_ver?: string; serial_num?: string; notes?: string;
+  }) => req<{ ok: boolean; id: string; name: string }>("fleet", "/?action=register", {
+    method: "POST",
+    body: JSON.stringify(data),
+  }),
+  patch: (id: string, data: Partial<Pick<Drone,
+    "name" | "role" | "ai_model" | "hw_weight" | "hw_motors" | "hw_battery_cap" | "hw_max_speed" | "status"
+  > & { firmware_ver?: string; serial_num?: string; notes?: string }>) =>
+    req<{ ok: boolean }>("fleet", `/?id=${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  remove: (id: string) =>
+    req<{ ok: boolean; deleted: string }>("fleet", `/?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
     }),
 };
 

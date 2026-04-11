@@ -5,13 +5,21 @@
       "method": "GET",
       "path": "/",
       "expectedStatus": 200,
-      "expectedBody": {"flying": 2},
+      "expectedBody": {"total": 4},
       "bodyMatcher": "partial"
     },
     {
-      "name": "GET single drone SF-001",
+      "name": "GET analytics",
       "method": "GET",
-      "path": "/?id=SF-001",
+      "path": "/?action=analytics",
+      "expectedStatus": 200,
+      "expectedBody": {},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "GET connections SF-001",
+      "method": "GET",
+      "path": "/?action=connections&id=SF-001",
       "expectedStatus": 200,
       "expectedBody": {},
       "bodyMatcher": "partial"

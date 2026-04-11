@@ -9,6 +9,7 @@ interface LayoutProps {
 
 const navItems = [
   { id: "dashboard", label: "Командный центр", icon: "LayoutDashboard" },
+  { id: "ucp", label: "ЦУП", icon: "Radio" },
   { id: "missions", label: "Миссии", icon: "Target" },
   { id: "flightcontrol", label: "Управление полётом", icon: "Navigation" },
   { id: "ai", label: "ИИ-ядро", icon: "Brain" },
