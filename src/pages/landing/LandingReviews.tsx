@@ -61,41 +61,56 @@ export default function LandingReviews() {
       <section className="px-6 py-20 max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <div className="tag tag-green mb-4">Отзывы клиентов</div>
-          <h2 className="text-4xl font-bold mb-3">Что говорят операторы</h2>
-          <p className="text-muted-foreground text-sm">Реальные результаты от реальных клиентов</p>
+          <h2 className="text-4xl font-bold mb-3">Результаты в цифрах</h2>
+          <p className="text-muted-foreground text-sm">6 отраслей · реальные бизнес-результаты</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {testimonials.map((t) => (
             <article key={t.name}
-              className="rounded-2xl p-6 flex flex-col gap-4 transition-all hover:scale-[1.015]"
+              className="rounded-2xl p-5 flex flex-col gap-3 transition-all hover:scale-[1.015]"
               style={{
                 background: "rgba(255,255,255,0.025)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.07)",
               }}
               itemScope itemType="https://schema.org/Review"
             >
-              {/* Stars */}
-              <div className="flex gap-0.5">
-                {Array.from({ length: t.stars }).map((_, i) => (
-                  <span key={i} style={{ color: "#f59e0b", fontSize: 14 }}>★</span>
-                ))}
+              {/* Industry tag + stars */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-lg"
+                  style={{
+                    background: `${t.industryColor}14`,
+                    color: t.industryColor,
+                    border: `1px solid ${t.industryColor}25`,
+                  }}>
+                  {t.industry}
+                </span>
+                <div className="flex gap-0.5">
+                  {Array.from({ length: t.stars }).map((_, i) => (
+                    <span key={i} style={{ color: "#f59e0b", fontSize: 12 }}>★</span>
+                  ))}
+                </div>
+              </div>
+              {/* Result highlight */}
+              <div className="px-3 py-2 rounded-lg text-sm font-bold"
+                style={{ background: `${t.industryColor}10`, color: t.industryColor }}>
+                {t.result}
               </div>
               {/* Quote */}
-              <p className="text-sm leading-relaxed flex-1 italic"
+              <p className="text-xs leading-relaxed flex-1"
                 style={{ color: "hsl(var(--muted-foreground))" }}
                 itemProp="reviewBody">
                 «{t.text}»
               </p>
               {/* Author */}
-              <div className="flex items-center gap-3 pt-3"
+              <div className="flex items-center gap-2.5 pt-2.5"
                 style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0"
-                  style={{ background: "rgba(0,212,255,0.12)", color: "var(--electric)", border: "1px solid rgba(0,212,255,0.2)" }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0"
+                  style={{ background: `${t.industryColor}15`, color: t.industryColor }}>
                   {t.name.charAt(0)}
                 </div>
                 <div itemProp="author" itemScope itemType="https://schema.org/Person">
                   <div className="font-semibold text-xs" itemProp="name">{t.name}</div>
-                  <div className="text-xs" style={{ color: "hsl(var(--muted-foreground))", opacity: 0.7 }}>
+                  <div className="text-xs" style={{ color: "hsl(var(--muted-foreground))", opacity: 0.6 }}>
                     {t.role} · {t.org}
                   </div>
                 </div>

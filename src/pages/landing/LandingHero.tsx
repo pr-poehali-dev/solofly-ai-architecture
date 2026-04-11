@@ -135,21 +135,43 @@ export default function LandingHero({ onNavigate, onOpenDemo }: LandingHeroProps
               fontSize: "clamp(3rem, 7vw, 5.5rem)", fontWeight: 900,
               lineHeight: 1.05, letterSpacing: "-0.035em",
             }}>
-              <span className="gradient-text">Единая платформа</span>
+              <span className="gradient-text">Замените 3 оператора</span>
               <br />
-              <span style={{ color: "hsl(var(--foreground))" }}>управления БПЛА</span>
+              <span style={{ color: "hsl(var(--foreground))" }}>одной платформой</span>
             </h1>
           </div>
 
           <p className="text-center max-w-2xl mx-auto mb-4 leading-relaxed fade-up"
-            style={{ fontSize: "clamp(1rem, 2vw, 1.2rem)", color: "hsl(var(--muted-foreground))" }}>
-            SoloFly объединяет дроны, роботизированные системы и операторские команды
-            в единую экосистему с полной автономностью работы.
+            style={{ fontSize: "clamp(1rem, 2vw, 1.15rem)", color: "hsl(var(--muted-foreground))" }}>
+            SoloFly автоматизирует инспекцию, мониторинг и картографирование для нефтегаза,
+            энергетики, АПК, строительства и охраны. До 85% полётов — без участия человека.
           </p>
 
-          <p className="text-center text-sm mb-10 fade-up"
-            style={{ color: "hsl(var(--muted-foreground))", opacity: 0.6 }}>
-            Ardupilot · PX4 · MAVLink v2 · Данные в России · 152-ФЗ
+          {/* Industry quick-links */}
+          <div className="flex items-center justify-center gap-2 mb-8 flex-wrap fade-up">
+            {[
+              { label: "Нефтегаз", icon: "Flame" },
+              { label: "Энергетика", icon: "Zap" },
+              { label: "АПК", icon: "Wheat" },
+              { label: "Строительство", icon: "Building2" },
+              { label: "Безопасность", icon: "Shield" },
+              { label: "Логистика", icon: "Package" },
+            ].map(item => (
+              <span key={item.label} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+                style={{
+                  background: "rgba(0,212,255,0.07)",
+                  border: "1px solid rgba(0,212,255,0.18)",
+                  color: "var(--electric)",
+                }}>
+                <Icon name={item.icon} fallback="Check" size={11} />
+                {item.label}
+              </span>
+            ))}
+          </div>
+
+          <p className="text-center text-xs mb-10 fade-up"
+            style={{ color: "hsl(var(--muted-foreground))", opacity: 0.5 }}>
+            Ardupilot · PX4 · MAVLink v2 · YOLO11 · Данные в России · 152-ФЗ
           </p>
 
           {/* CTA */}
