@@ -13,11 +13,12 @@ import ApiDocsPage from "./ApiDocsPage";
 import SupportPage from "./SupportPage";
 import IntegrationsPage from "./IntegrationsPage";
 import ScanningPage from "./ScanningPage";
+import ScanArchivePage from "./ScanArchivePage";
 
 type Page =
   | "landing" | "dashboard" | "missions" | "flightcontrol"
   | "ai" | "swarm" | "monitoring" | "flightlog"
-  | "security" | "api" | "support" | "integrations" | "scanning";
+  | "security" | "api" | "support" | "integrations" | "scanning" | "scanarchive";
 
 export default function Index() {
   const [page, setPage] = useState<Page>("landing");
@@ -39,7 +40,8 @@ export default function Index() {
       case "api": return <ApiDocsPage />;
       case "support": return <SupportPage />;
       case "integrations": return <IntegrationsPage />;
-      case "scanning": return <ScanningPage />;
+      case "scanning":    return <ScanningPage />;
+      case "scanarchive": return <ScanArchivePage />;
       default: return <DashboardPage />;
     }
   };

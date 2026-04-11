@@ -490,6 +490,19 @@ export default function ScanningPage() {
           <button onClick={handleExport} disabled={progress === 0} className="btn-ghost px-4 py-2 rounded-lg text-xs flex items-center gap-2 disabled:opacity-40">
             <Icon name="Download" size={13} /> Экспорт
           </button>
+          <button
+            onClick={handleSaveToCloud}
+            disabled={progress === 0 || scanning || saving || !!savedUrl}
+            className="px-4 py-2 rounded-lg text-xs flex items-center gap-2 transition-all disabled:opacity-40"
+            style={savedUrl
+              ? { background: "rgba(0,255,136,0.1)", color: "var(--signal-green)", border: "1px solid rgba(0,255,136,0.3)" }
+              : { background: "rgba(0,212,255,0.1)", color: "var(--electric)", border: "1px solid rgba(0,212,255,0.25)" }
+            }
+          >
+            <Icon name={savedUrl ? "CloudCheck" : saving ? "Loader" : "Cloud"} fallback="Cloud" size={13}
+              className={saving ? "animate-spin" : ""} />
+            {savedUrl ? "Сохранено" : saving ? "Сохраняю…" : "Сохранить в облако"}
+          </button>
           {scanning
             ? <button onClick={handleStop} className="px-4 py-2 rounded-lg text-xs flex items-center gap-2" style={{ background: "rgba(255,59,48,0.12)", color: "var(--danger)", border: "1px solid rgba(255,59,48,0.3)" }}>
                 <Icon name="Square" size={13} /> Стоп
@@ -610,6 +623,22 @@ export default function ScanningPage() {
             </div>
             <p className="text-xs text-muted-foreground mt-3 leading-relaxed">{mode.desc}</p>
           </div>
+
+          {/* Cloud save banner */}
+          {savedUrl && (
+            <div className="p-4 rounded-xl" style={{ background: "rgba(0,255,136,0.06)", border: "1px solid rgba(0,255,136,0.2)" }}>
+              <div className="flex items-center gap-2 mb-2">
+                <Icon name="CloudCheck" fallback="CheckCircle" size={14} style={{ color: "var(--signal-green)" }} />
+                <span className="text-xs font-semibold" style={{ color: "var(--signal-green)" }}>Сохранено в облаке</span>
+              </div>
+              <div className="text-xs text-muted-foreground font-mono truncate mb-2">{savedUrl.split("/").slice(-2).join("/")}</div>
+              <a href={savedUrl} target="_blank" rel="noopener noreferrer"
+                className="text-xs flex items-center gap-1.5 w-fit px-3 py-1.5 rounded-lg transition-all"
+                style={{ background: "rgba(0,255,136,0.1)", color: "var(--signal-green)", border: "1px solid rgba(0,255,136,0.25)" }}>
+                <Icon name="ExternalLink" size={11} /> Открыть файл
+              </a>
+            </div>
+          )}
 
           {/* Scan log */}
           <div className="panel rounded-xl p-5">

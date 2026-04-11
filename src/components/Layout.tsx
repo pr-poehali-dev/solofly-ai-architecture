@@ -15,6 +15,7 @@ const navItems = [
   { id: "swarm", label: "Рой БПЛА", icon: "Network" },
   { id: "monitoring", label: "Мониторинг", icon: "Activity" },
   { id: "scanning", label: "Сканирование", icon: "ScanLine" },
+  { id: "scanarchive", label: "Архив сканов", icon: "Archive" },
   { id: "flightlog", label: "История полётов", icon: "History" },
   { id: "security", label: "Безопасность", icon: "Shield" },
   { id: "api", label: "API", icon: "Code2" },
