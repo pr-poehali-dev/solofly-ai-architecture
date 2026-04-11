@@ -618,7 +618,12 @@ const DIFFICULTY_CLS   = { easy: "tag-green", medium: "tag-electric", hard: "tag
 
 function StarterGuide({ onOpenCategory }: { onOpenCategory: (cat: string) => void }) {
   const [activeStep, setActiveStep] = useState<number | null>(null);
-  const [completed, setCompleted]   = useState<Set<number>>(new Set());
+  const [completed, setCompleted]   = useState<Set<number>>(() => {
+    try {
+      const saved = localStorage.getItem("dronebuilder_progress");
+      return saved ? new Set<number>(JSON.parse(saved)) : new Set<number>();
+    } catch { return new Set<number>(); }
+  });
 
   const toggle = (step: number) => {
     setActiveStep(prev => prev === step ? null : step);
@@ -629,6 +634,7 @@ function StarterGuide({ onOpenCategory }: { onOpenCategory: (cat: string) => voi
     setCompleted(prev => {
       const next = new Set(prev);
       if (next.has(step)) { next.delete(step); } else { next.add(step); }
+      try { localStorage.setItem("dronebuilder_progress", JSON.stringify([...next])); } catch (err) { void err; }
       return next;
     });
   };
