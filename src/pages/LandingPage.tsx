@@ -159,6 +159,35 @@ export default function LandingPage({ onNavigate }: Props) {
           Войти в систему
         </button>
       </section>
+
+      {/* Footer */}
+      <footer className="border-t px-6 py-8" style={{ borderColor: "hsl(var(--border))" }}>
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "var(--electric)" }}>
+              <Icon name="Navigation" size={14} style={{ color: "hsl(210 25% 4%)" }} />
+            </div>
+            <span className="font-bold text-sm tracking-tight">Solo<span className="gradient-text">Fly</span></span>
+          </div>
+          <div className="text-center sm:text-right">
+            <div className="text-xs text-muted-foreground">
+              Продукт компании{" "}
+              <a
+                href="https://mat-labs.ru"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors hover:opacity-80"
+                style={{ color: "var(--electric)" }}
+              >
+                ООО МАТ-Лабс
+              </a>
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              © {new Date().getFullYear()} mat-labs.ru · Все права защищены
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
