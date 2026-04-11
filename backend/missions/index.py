@@ -103,11 +103,12 @@ def handler(event: dict, context) -> dict:
             cur.execute(
                 f"""INSERT INTO {SCHEMA}.missions
                     (code, name, drone_id, type, status, waypoints, waypoints_json, tasks,
-                     weather_wind, weather_vis, weather_temp, weather_risk)
-                    VALUES (%s,%s,%s,%s,'planned',%s,%s,%s,%s,%s,%s,%s)
+                     altitude_m, weather_wind, weather_vis, weather_temp, weather_risk)
+                    VALUES (%s,%s,%s,%s,'planned',%s,%s,%s,%s,%s,%s,%s,%s)
                     RETURNING id, code""",
                 (body["code"], body["name"], body["drone_id"], body["type"],
                  wps_count, _json.dumps(wps_json), body.get("tasks", []),
+                 body.get("altitude_m", 60),
                  body.get("weather_wind", 0), body.get("weather_vis", "хорошая"),
                  body.get("weather_temp", 15), body.get("weather_risk", "low"))
             )

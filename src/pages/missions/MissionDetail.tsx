@@ -97,15 +97,16 @@ export default function MissionDetail({
         {/* Маршрут */}
         {tab === "map" && (
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               {[
-                { label: "Дрон",      val: sel.drone_name ?? sel.drone_id },
-                { label: "Старт",     val: fmtTime(sel.start_time) },
-                { label: "Прогресс",  val: `${sel.progress}%` },
+                { label: "Дрон",     val: sel.drone_name ?? sel.drone_id },
+                { label: "Эшелон",   val: sel.altitude_m ? `${sel.altitude_m} м` : "60 м", electric: true },
+                { label: "Старт",    val: fmtTime(sel.start_time) },
+                { label: "Прогресс", val: `${sel.progress}%` },
               ].map(i => (
                 <div key={i.label} className="text-center p-3 rounded-lg" style={{ background: "hsl(var(--input))" }}>
                   <div className="hud-label mb-1">{i.label}</div>
-                  <div className="hud-value text-sm">{i.val}</div>
+                  <div className="hud-value text-sm" style={(i as {electric?: boolean}).electric ? { color: "var(--signal-green)" } : undefined}>{i.val}</div>
                 </div>
               ))}
             </div>

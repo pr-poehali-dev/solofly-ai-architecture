@@ -5,7 +5,7 @@
       "method": "GET",
       "path": "/",
       "expectedStatus": 200,
-      "expectedBody": {},
+      "expectedBody": { "total": 4 },
       "bodyMatcher": "partial"
     },
     {
@@ -13,7 +13,7 @@
       "method": "GET",
       "path": "/?status=active",
       "expectedStatus": 200,
-      "expectedBody": {},
+      "expectedBody": { "stats": {} },
       "bodyMatcher": "partial"
     },
     {
@@ -21,7 +21,7 @@
       "method": "GET",
       "path": "/?id=1",
       "expectedStatus": 200,
-      "expectedBody": {},
+      "expectedBody": { "mission": { "id": 1 } },
       "bodyMatcher": "partial"
     }
   ]

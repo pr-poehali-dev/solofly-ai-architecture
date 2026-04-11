@@ -188,8 +188,9 @@ export interface Mission {
   status: string;
   progress: number;
   waypoints: number;
-  waypoints_json?: { lat: number; lon: number; action?: string | null }[];
+  waypoints_json?: { lat: number; lon: number; action?: string | null; altitude?: number | null }[];
   tasks: string[];
+  altitude_m: number;
   weather_wind: number;
   weather_vis: string;
   weather_temp: number;
@@ -219,8 +220,9 @@ export const missions = {
   create: (data: {
     code: string; name: string; drone_id: string; type: string;
     waypoints?: number;
-    waypoints_json?: { lat: number; lon: number; action?: string | null }[];
+    waypoints_json?: { lat: number; lon: number; action?: string | null; altitude?: number | null }[];
     tasks?: string[];
+    altitude_m?: number;
     weather_wind?: number; weather_vis?: string;
     weather_temp?: number; weather_risk?: string;
   }) => req<{ ok: boolean; id: number; code: string }>("missions", "/", {
