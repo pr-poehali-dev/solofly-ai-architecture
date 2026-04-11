@@ -9,6 +9,7 @@ const URLS = {
   scanning:  "https://functions.poehali.dev/8f8ffd51-a285-42f6-9148-f178ea5947c4",
   presence:  "https://functions.poehali.dev/5b06fdf4-7c9d-4b21-838b-0b3498110a8d",
   auth:      "https://functions.poehali.dev/673a3df3-6c29-4329-8ed8-5e321ed71a9d",
+  billing:   "https://functions.poehali.dev/e1809c69-3d90-440b-8b7b-44cc4b722bfc",
 };
 
 async function req<T>(
@@ -460,5 +461,51 @@ export const authApi = {
     authReq<{ ok: boolean; message: string }>("delete", {
       method: "POST",
       body:   JSON.stringify({ password }),
+    }),
+};
+
+// ─── Billing ──────────────────────────────────────────────────────────────────
+
+export interface Plan {
+  id:           string;
+  name:         string;
+  price_month:  number;
+  price_year:   number;
+  max_drones:   number;
+  max_missions: number;
+  features:     string[];
+  is_popular:   boolean;
+}
+
+export interface MyPlan extends Plan {
+  plan_id:         string;
+  plan_billing:    string;
+  plan_expires_at: string | null;
+}
+
+export interface PlanLimits {
+  plan_id:     string;
+  drones:      { used: number; max: number };
+  missions:    { used: number; max: number };
+  drones_ok:   boolean;
+  missions_ok: boolean;
+}
+
+function billingReq<T>(action: string, options: RequestInit = {}): Promise<T> {
+  const token   = localStorage.getItem("sf_token");
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["X-Auth-Token"] = token;
+  const path = action ? `/?action=${action}` : "/";
+  return req<T>("billing", path, { ...options, headers });
+}
+
+export const billing = {
+  getPlans:  ()                                          => billingReq<{ plans: Plan[] }>(""),
+  getMyPlan: ()                                          => billingReq<{ plan: MyPlan }>("my"),
+  getLimits: ()                                          => billingReq<PlanLimits>("limits"),
+  upgrade:   (plan_id: string, billType: "month"|"year") =>
+    billingReq<{ ok: boolean; plan_id: string; expires: string }>("upgrade", {
+      method: "POST",
+      body:   JSON.stringify({ plan_id, billing: billType }),
     }),
 };

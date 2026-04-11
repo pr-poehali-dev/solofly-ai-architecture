@@ -1,0 +1,28 @@
+{
+  "tests": [
+    {
+      "name": "GET all plans",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "GET my plan no token",
+      "method": "GET",
+      "path": "/?action=my",
+      "expectedStatus": 401,
+      "expectedBody": {},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "GET limits no token",
+      "method": "GET",
+      "path": "/?action=limits",
+      "expectedStatus": 401,
+      "expectedBody": {},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
