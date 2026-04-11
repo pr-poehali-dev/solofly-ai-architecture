@@ -1,5 +1,51 @@
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { DEMO_SLIDES } from "./landingData";
+
+// ─── Lazy-загрузка слайда с skeleton ─────────────────────────────────────────
+
+function SlideImage({ src, alt }: { src: string; alt: string }) {
+  const [loaded, setLoaded] = useState(false);
+  const [error,  setError]  = useState(false);
+
+  return (
+    <>
+      {/* Skeleton пока грузится */}
+      {!loaded && !error && (
+        <div className="absolute inset-0 flex items-center justify-center"
+          style={{ background: "rgba(0,212,255,0.04)" }}>
+          <div className="space-y-3 w-full px-12 opacity-40">
+            <div className="h-3 rounded animate-pulse" style={{ background: "rgba(0,212,255,0.2)", width: "60%" }} />
+            <div className="h-3 rounded animate-pulse" style={{ background: "rgba(0,212,255,0.15)", width: "80%" }} />
+            <div className="h-3 rounded animate-pulse" style={{ background: "rgba(0,212,255,0.1)", width: "45%" }} />
+          </div>
+          <div className="absolute">
+            <Icon name="ImageOff" size={28} style={{ color: "rgba(0,212,255,0.2)" }} />
+          </div>
+        </div>
+      )}
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.3)" }}>
+          <div className="text-center">
+            <Icon name="ImageOff" size={28} style={{ color: "rgba(255,255,255,0.3)" }} />
+            <div className="text-xs mt-2" style={{ color: "rgba(255,255,255,0.4)" }}>Не удалось загрузить</div>
+          </div>
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        className="w-full h-full object-cover fade-up"
+        style={{ opacity: loaded ? 1 : 0, transition: "opacity 0.3s" }}
+        onLoad={() => setLoaded(true)}
+        onError={() => { setError(true); setLoaded(true); }}
+      />
+    </>
+  );
+}
 
 // ─── Демо-модал ───────────────────────────────────────────────────────────────
 
@@ -35,11 +81,10 @@ export function DemoModal({ slide, onSlide, onClose, onNavigate }: DemoModalProp
 
         {/* Слайд */}
         <div className="relative overflow-hidden" style={{ aspectRatio: "16/9" }}>
-          <img
-            key={slide}
+          <SlideImage
             src={DEMO_SLIDES[slide].img}
             alt={DEMO_SLIDES[slide].title}
-            className="w-full h-full object-cover fade-up"
+            key={slide}
           />
           <div className="absolute inset-0 pointer-events-none"
             style={{ background: "linear-gradient(to top, rgba(5,9,14,0.92) 0%, transparent 50%)" }} />

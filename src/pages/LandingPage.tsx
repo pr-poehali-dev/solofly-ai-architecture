@@ -5,18 +5,32 @@ import { DemoModal, PromoPopup } from "./landing/LandingModals";
 
 interface Props { onNavigate: (p: string) => void; }
 
+// Показываем popup только на десктопе
+const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
+
+// Проверяем — видел ли уже этот сеанс (чтобы не раздражать при навигации)
+const PROMO_KEY = "sf_promo_shown";
+const promoAlreadySeen = () => {
+  try { return !!sessionStorage.getItem(PROMO_KEY); } catch { return true; }
+};
+const markPromoSeen = () => {
+  try { sessionStorage.setItem(PROMO_KEY, "1"); } catch { /* ignore */ }
+};
+
 export default function LandingPage({ onNavigate }: Props) {
   const [showDemo,   setShowDemo]   = useState(false);
   const [demoSlide,  setDemoSlide]  = useState(0);
   const [showPromo,  setShowPromo]  = useState(false);
-  const [promoShown, setPromoShown] = useState(false);
 
-  // Pop-up через 12 сек для посетителя (мероприятие по привлечению)
+  // Popup: только десктоп + только если не видел в этом сеансе + через 30 сек
   useEffect(() => {
-    if (promoShown) return;
-    const t = setTimeout(() => { setShowPromo(true); setPromoShown(true); }, 12000);
+    if (!isDesktop || promoAlreadySeen()) return;
+    const t = setTimeout(() => {
+      setShowPromo(true);
+      markPromoSeen();
+    }, 30_000);
     return () => clearTimeout(t);
-  }, [promoShown]);
+  }, []);
 
   return (
     <div className="min-h-screen grid-bg">

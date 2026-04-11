@@ -41,7 +41,7 @@ function relTime(ts: string) {
 }
 
 export default function DashboardPage({ onNavigate }: { onNavigate?: (page: string) => void } = {}) {
-  const { data: fleet, loading: fleetLoading, error: fleetErr } = useLiveFleet(3000);
+  const { data: fleet, loading: fleetLoading, error: fleetErr } = useLiveFleet(8000);
   const [selectedDroneId, setSelectedDroneId] = useState<string | null>(null);
   const [operatorPos, setOperatorPos] = useState<{ lat: number; lon: number } | null>(null);
   const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "ok" | "denied">("idle");
@@ -55,20 +55,20 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
       { enableHighAccuracy: true, timeout: 8000 }
     );
   };
-  const { data: eventsData } = useEvents(8000);
+  const { data: eventsData } = useEvents(20000);
 
-  // Совместная работа операторов
+  // Совместная работа операторов — реже опрашиваем чтобы снизить нагрузку
   const { operators: remoteOperators, total: remoteTotal } = useOperatorPresence({
     publish:   geoStatus === "ok",
     myPos:     operatorPos,
     page:      "dashboard",
-    publishMs: 5000,
-    pollMs:    5000,
+    publishMs: 15000,
+    pollMs:    15000,
   });
 
-  const drones = fleet?.drones ?? [];
+  const drones = useMemo(() => fleet?.drones ?? [], [fleet]);
   const flying = fleet?.flying ?? 0;
-  const evList = eventsData?.events.slice(0, 5) ?? [];
+  const evList = useMemo(() => eventsData?.events.slice(0, 5) ?? [], [eventsData]);
 
   // Мемоизируем тяжёлые вычисления
   const flyingDrones   = useMemo(() => drones.filter(d => d.status === "flight"), [drones]);
