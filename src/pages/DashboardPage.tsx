@@ -4,6 +4,7 @@ import { useLiveFleet } from "@/hooks/useLiveFleet";
 import { useEvents } from "@/hooks/useEvents";
 import LiveMap, { type MapDrone } from "@/components/LiveMap";
 import { useOperatorPresence } from "@/hooks/useOperatorPresence";
+import { useMobile } from "@/hooks/use-mobile";
 
 const statusMap: Record<string, { label: string; dot: string; cls: string }> = {
   flight:  { label: "В полёте",  dot: "dot-online",  cls: "tag-green"   },
@@ -77,32 +78,35 @@ export default function DashboardPage() {
     [drones]
   );
 
+  const isMobile = useMobile();
   const now   = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
   const today = new Date().toLocaleDateString("ru-RU", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase();
 
   return (
-    <div className="p-6 space-y-5 fade-up">
+    <div className={`${isMobile ? "p-3" : "p-6"} space-y-4 fade-up`}>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold">Командный центр</h1>
+          <h1 className={`${isMobile ? "text-lg" : "text-xl"} font-bold`}>Командный центр</h1>
           <p className="hud-label mt-0.5">
-            {today} · {now} UTC+3
+            {isMobile ? now : `${today} · ${now}`} UTC+3
             {fleetErr
-              ? <span className="text-red-400 ml-2">⚠ Ошибка связи с бэкендом</span>
+              ? <span className="text-red-400 ml-2">⚠ Ошибка</span>
               : <span className="ml-2" style={{ color: "var(--signal-green)" }}>● LIVE</span>
             }
           </p>
         </div>
-        <div className="flex gap-2">
-          <button className="btn-ghost px-4 py-2 rounded-lg text-xs flex items-center gap-2">
-            <Icon name="Download" size={13} />
-            Отчёт PDF
-          </button>
-          <button className="btn-electric px-4 py-2 rounded-lg text-xs flex items-center gap-2">
-            <Icon name="Plus" size={13} />
-            Новая миссия
-          </button>
-        </div>
+        {!isMobile && (
+          <div className="flex gap-2">
+            <button className="btn-ghost px-4 py-2 rounded-lg text-xs flex items-center gap-2">
+              <Icon name="Download" size={13} />
+              Отчёт PDF
+            </button>
+            <button className="btn-electric px-4 py-2 rounded-lg text-xs flex items-center gap-2">
+              <Icon name="Plus" size={13} />
+              Новая миссия
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Stats */}
@@ -302,7 +306,7 @@ export default function DashboardPage() {
         </div>
         <LiveMap
           drones={mapDrones}
-          height={340}
+          height={isMobile ? 260 : 340}
           operatorPos={operatorPos}
           remoteOperators={remoteOperators}
           selectedDroneId={selectedDroneId}

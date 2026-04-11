@@ -1,4 +1,5 @@
 import Icon from "@/components/ui/icon";
+import { useMobile } from "@/hooks/use-mobile";
 
 interface LayoutProps {
   currentPage: string;
@@ -8,23 +9,34 @@ interface LayoutProps {
 }
 
 const navItems = [
-  { id: "dashboard", label: "Командный центр", icon: "LayoutDashboard" },
-  { id: "ucp", label: "ЦУП", icon: "Radio" },
-  { id: "missions", label: "Миссии", icon: "Target" },
-  { id: "flightcontrol", label: "Управление полётом", icon: "Navigation" },
-  { id: "ai", label: "ИИ-ядро", icon: "Brain" },
-  { id: "swarm", label: "Рой БПЛА", icon: "Network" },
-  { id: "monitoring", label: "Мониторинг", icon: "Activity" },
-  { id: "scanning", label: "Сканирование", icon: "ScanLine" },
-  { id: "scanarchive", label: "Архив сканов", icon: "Archive" },
-  { id: "flightlog", label: "История полётов", icon: "History" },
-  { id: "security", label: "Безопасность", icon: "Shield" },
-  { id: "api", label: "API", icon: "Code2" },
-  { id: "integrations", label: "Подключения", icon: "Plug" },
-  { id: "support", label: "Поддержка", icon: "Headphones" },
+  { id: "dashboard",    label: "Командный центр",   icon: "LayoutDashboard" },
+  { id: "ucp",          label: "ЦУП",               icon: "Radio" },
+  { id: "missions",     label: "Миссии",             icon: "Target" },
+  { id: "flightcontrol",label: "Управление полётом", icon: "Navigation" },
+  { id: "ai",           label: "ИИ-ядро",            icon: "Brain" },
+  { id: "swarm",        label: "Рой БПЛА",           icon: "Network" },
+  { id: "monitoring",   label: "Мониторинг",         icon: "Activity" },
+  { id: "scanning",     label: "Сканирование",       icon: "ScanLine" },
+  { id: "scanarchive",  label: "Архив сканов",       icon: "Archive" },
+  { id: "flightlog",    label: "История полётов",    icon: "History" },
+  { id: "security",     label: "Безопасность",       icon: "Shield" },
+  { id: "api",          label: "API",                icon: "Code2" },
+  { id: "integrations", label: "Подключения",        icon: "Plug" },
+  { id: "support",      label: "Поддержка",          icon: "Headphones" },
+];
+
+// Главные разделы в мобильном нижнем таббаре
+const mobileTabItems = [
+  { id: "dashboard",     label: "Центр",    icon: "LayoutDashboard" },
+  { id: "flightcontrol", label: "Пульт",    icon: "Navigation" },
+  { id: "missions",      label: "Миссии",   icon: "Target" },
+  { id: "monitoring",    label: "События",  icon: "Activity" },
+  { id: "ai",            label: "ИИ",       icon: "Brain" },
 ];
 
 export default function Layout({ currentPage, onNavigate, children, isLanding }: LayoutProps) {
+  const isMobile = useMobile();
+
   if (isLanding) {
     return (
       <div className="min-h-screen">
@@ -51,6 +63,65 @@ export default function Layout({ currentPage, onNavigate, children, isLanding }:
     );
   }
 
+  // ── МОБИЛЬНЫЙ LAYOUT ──────────────────────────────────────────────────────────
+  if (isMobile) {
+    return (
+      <div className="flex flex-col min-h-screen" style={{ background: "hsl(var(--background))" }}>
+        {/* Мобильная шапка */}
+        <header className="flex items-center justify-between px-4 h-12 shrink-0 sticky top-0 z-40"
+          style={{ background: "rgba(5,9,14,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid hsl(var(--border))" }}>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: "var(--electric)" }}>
+              <Icon name="Navigation" size={12} style={{ color: "hsl(210 25% 4%)" }} />
+            </div>
+            <span className="font-bold text-sm tracking-tight">Solo<span className="gradient-text">Fly</span></span>
+            <span className="tag tag-green ml-1" style={{ fontSize: 8 }}>LIVE</span>
+          </div>
+          {/* Текущая страница */}
+          <span className="text-xs text-muted-foreground">
+            {navItems.find(n => n.id === currentPage)?.label ?? ""}
+          </span>
+        </header>
+
+        {/* Контент — паддинг снизу под таббар */}
+        <main className="flex-1 overflow-y-auto pb-20">
+          {children}
+        </main>
+
+        {/* Нижний таббар */}
+        <nav className="fixed bottom-0 left-0 right-0 z-40 flex"
+          style={{
+            background: "rgba(5,9,14,0.97)",
+            backdropFilter: "blur(16px)",
+            borderTop: "1px solid hsl(var(--border))",
+            paddingBottom: "env(safe-area-inset-bottom)",
+          }}>
+          {mobileTabItems.map(item => {
+            const active = currentPage === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => onNavigate(item.id)}
+                className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-all active:scale-95"
+                style={{ color: active ? "var(--electric)" : "hsl(var(--muted-foreground))" }}
+              >
+                <div className="relative">
+                  <Icon name={item.icon} fallback="Circle" size={20} />
+                  {active && (
+                    <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full"
+                      style={{ background: "var(--electric)" }} />
+                  )}
+                </div>
+                <span style={{ fontSize: 9, fontWeight: active ? 700 : 400 }}>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+    );
+  }
+
+  // ── ДЕСКТОП LAYOUT ────────────────────────────────────────────────────────────
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}

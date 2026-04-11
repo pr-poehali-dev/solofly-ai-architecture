@@ -4,6 +4,8 @@ import { useLiveFleet } from "@/hooks/useLiveFleet";
 import LiveMap, { type MapDrone } from "@/components/LiveMap";
 import { fleet } from "@/lib/api";
 import AIExplainPanel from "@/components/AIExplainPanel";
+import MobileFlightControl from "@/components/MobileFlightControl";
+import { useMobile } from "@/hooks/use-mobile";
 
 const maneuvers = [
   { id: "hover", label: "Зависание", icon: "Pause" },
@@ -15,6 +17,7 @@ const maneuvers = [
 ];
 
 export default function FlightControlPage() {
+  const isMobile = useMobile();
   const { data: fleetData, loading, refresh } = useLiveFleet(3000);
   const [selDroneId, setSelDroneId] = useState("SF-001");
   const [activeManeuver, setActiveManeuver] = useState<string | null>(null);
@@ -114,7 +117,20 @@ export default function FlightControlPage() {
     drone.yaw = Number(last.yaw ?? drone.heading);
   }
 
-  const selDrone = selDroneId;;
+  const selDrone = selDroneId;
+
+  // На мобильном — упрощённый пульт
+  if (isMobile) {
+    return (
+      <MobileFlightControl
+        drone={droneRaw ?? null}
+        loading={loading}
+        drones={drones}
+        selDroneId={selDroneId}
+        onSelectDrone={setSelDroneId}
+      />
+    );
+  }
 
   return (
     <div className="p-6 fade-up space-y-5">

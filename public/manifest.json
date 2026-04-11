@@ -1,0 +1,32 @@
+{
+  "name": "SoloFly — Управление БПЛА",
+  "short_name": "SoloFly",
+  "description": "Автономное управление дронами на базе ИИ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#05090e",
+  "theme_color": "#00d4ff",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Управление полётом",
+      "short_name": "Пульт",
+      "url": "/?page=flightcontrol",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Командный центр",
+      "short_name": "Дашборд",
+      "url": "/?page=dashboard",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ]
+}
