@@ -3,6 +3,33 @@ import Icon from "@/components/ui/icon";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 
+function PlanBadge({ user }: { user: { plan_id?: string; plan_expires_at?: string | null } | null }) {
+  if (!user?.plan_id || user.plan_id === "free") return null;
+  const daysLeft = user.plan_expires_at
+    ? Math.ceil((new Date(user.plan_expires_at).getTime() - Date.now()) / 86400000)
+    : null;
+  const warn = daysLeft !== null && daysLeft <= 7;
+  return (
+    <div className="mx-3 mt-2 p-2.5 rounded-lg"
+      style={{
+        background: warn ? "rgba(255,165,0,0.07)" : "rgba(0,255,136,0.06)",
+        border: `1px solid ${warn ? "rgba(255,165,0,0.25)" : "rgba(0,255,136,0.15)"}`,
+      }}>
+      <div className="flex items-center justify-between">
+        <span className="hud-label">Подписка</span>
+        <span className={`tag ${warn ? "tag-warning" : "tag-green"}`} style={{ fontSize: 9 }}>
+          {user.plan_id.toUpperCase()}
+        </span>
+      </div>
+      {daysLeft !== null && (
+        <div className="hud-label mt-0.5" style={{ fontSize: 9, color: warn ? "var(--warning)" : "var(--muted-foreground)" }}>
+          {warn ? `⚠ Истекает через ${daysLeft} дн.` : `Активна · ${daysLeft} дн.`}
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface LayoutProps {
   currentPage: string;
   onNavigate: (page: string) => void;
@@ -169,6 +196,8 @@ export default function Layout({ currentPage, onNavigate, children, isLanding }:
           </div>
           <div className="hud-value text-xs" style={{ color: "var(--electric)" }}>2 дрона в полёте</div>
         </div>
+
+        <PlanBadge user={user} />
 
         {/* Nav */}
         <nav className="flex-1 p-3 space-y-0.5 mt-2">

@@ -1,14 +1,19 @@
 """
-Биллинг SoloFly — тарифные планы и лимиты.
-GET  /                       — список всех планов
-GET  /?action=my             — текущий план пользователя
-GET  /?action=limits         — текущие лимиты и использование
-POST /?action=upgrade        — сменить тариф (plan_id, billing)
+Биллинг SoloFly — тарифные планы и оплата.
+GET  /                         — список всех планов
+GET  /?action=my               — текущий план пользователя
+GET  /?action=limits           — лимиты и использование
+POST /?action=create-payment   — создать платёж YooKassa (возвращает payment_url)
+POST /?action=upgrade          — вручную сменить тариф (только для free)
 """
-import os, json
+import os, json, uuid, base64
 from decimal import Decimal
+from datetime import datetime, timezone
+from urllib.request import Request, urlopen
 import psycopg2
 from psycopg2.extras import RealDictCursor
+
+YOOKASSA_API_URL = "https://api.yookassa.ru/v3/payments"
 
 SCHEMA = "t_p93256795_solofly_ai_architect"
 
@@ -134,7 +139,123 @@ def handler(event: dict, context) -> dict:
                         "missions_ok":   plan["max_missions"] == -1 or missions_used < plan["max_missions"],
                     })}
 
-        # ── POST /?action=upgrade — сменить тариф ────────────────────────────
+        # ── POST /?action=create-payment — создать платёж YooKassa ─────────
+        elif method == "POST" and action == "create-payment":
+            user_id = get_user_id(event, cur)
+            if not user_id:
+                return {"statusCode": 401, "headers": CORS,
+                        "body": json.dumps({"error": "Не авторизован"})}
+
+            body    = json.loads(event.get("body") or "{}")
+            plan_id = body.get("plan_id")
+            billing = body.get("billing", "month")  # month | year
+
+            if plan_id not in VALID_PLANS or plan_id == "free":
+                return {"statusCode": 400, "headers": CORS,
+                        "body": json.dumps({"error": "Неверный план для оплаты"})}
+
+            # Получаем цену плана из БД
+            cur.execute(f"SELECT * FROM {SCHEMA}.plans WHERE id = %s", (plan_id,))
+            plan = cur.fetchone()
+            if not plan:
+                return {"statusCode": 404, "headers": CORS,
+                        "body": json.dumps({"error": "План не найден"})}
+
+            # Цена: годовая или месячная
+            price = float(plan["price_year"] if billing == "year" else plan["price_month"])
+            if price <= 0:
+                return {"statusCode": 400, "headers": CORS,
+                        "body": json.dumps({"error": "Цена плана не задана"})}
+
+            # Получаем email пользователя
+            cur.execute(f"SELECT email, name FROM {SCHEMA}.users WHERE id = %s", (user_id,))
+            user_row = cur.fetchone()
+            if not user_row:
+                return {"statusCode": 404, "headers": CORS,
+                        "body": json.dumps({"error": "Пользователь не найден"})}
+
+            shop_id    = os.environ.get("YOOKASSA_SHOP_ID", "")
+            secret_key = os.environ.get("YOOKASSA_SECRET_KEY", "")
+            if not shop_id or not secret_key:
+                return {"statusCode": 500, "headers": CORS,
+                        "body": json.dumps({"error": "Платёжная система не настроена"})}
+
+            # Создаём заказ в БД
+            billing_label = "годовая" if billing == "year" else "месячная"
+            order_number  = f"SF-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            description   = f"SoloFly {plan['name']} ({billing_label} подписка)"
+
+            cur.execute(
+                f"""INSERT INTO {SCHEMA}.orders
+                    (order_number, user_id, user_email, user_name, amount,
+                     plan_id, plan_billing, status)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,'pending') RETURNING id""",
+                (order_number, user_id, user_row["email"], user_row["name"],
+                 price, plan_id, billing)
+            )
+            order_id = cur.fetchone()["id"]
+            conn.commit()
+
+            # Создаём платёж в YooKassa
+            return_url = body.get("return_url",
+                "https://solofly-ai-architecture.poehali.dev/?paid=1")
+            auth = base64.b64encode(f"{shop_id}:{secret_key}".encode()).decode()
+            payload = {
+                "amount": {"value": f"{price:.2f}", "currency": "RUB"},
+                "capture": True,
+                "confirmation": {"type": "redirect", "return_url": return_url},
+                "description": f"{description} ({order_number})",
+                "receipt": {
+                    "customer": {"email": user_row["email"]},
+                    "items": [{
+                        "description": plan["name"][:128],
+                        "quantity": "1.000",
+                        "amount": {"value": f"{price:.2f}", "currency": "RUB"},
+                        "vat_code": 1,
+                        "payment_subject": "service",
+                        "payment_mode": "full_payment",
+                    }]
+                },
+                "metadata": {
+                    "order_id": str(order_id),
+                    "order_number": order_number,
+                    "user_id": str(user_id),
+                    "plan_id": plan_id,
+                    "billing": billing,
+                },
+            }
+            yk_req = Request(
+                YOOKASSA_API_URL,
+                data=json.dumps(payload).encode(),
+                headers={
+                    "Authorization": f"Basic {auth}",
+                    "Idempotence-Key": str(uuid.uuid4()),
+                    "Content-Type": "application/json",
+                },
+                method="POST"
+            )
+            with urlopen(yk_req, timeout=30) as resp:
+                yk = json.loads(resp.read().decode())
+
+            payment_url = yk.get("confirmation", {}).get("confirmation_url", "")
+            payment_id  = yk.get("id", "")
+
+            # Сохраняем payment_id и URL в заказе
+            cur.execute(
+                f"UPDATE {SCHEMA}.orders SET yookassa_payment_id=%s, payment_url=%s WHERE id=%s",
+                (payment_id, payment_url, order_id)
+            )
+            conn.commit()
+
+            return {"statusCode": 200, "headers": CORS,
+                    "body": json.dumps({
+                        "ok":          True,
+                        "payment_url": payment_url,
+                        "order_number": order_number,
+                        "amount":      price,
+                    })}
+
+        # ── POST /?action=upgrade — вручную сменить тариф ────────────────────
         elif method == "POST" and action == "upgrade":
             user_id = get_user_id(event, cur)
             if not user_id:

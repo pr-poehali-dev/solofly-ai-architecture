@@ -427,14 +427,50 @@ export const presence = {
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export interface User {
-  id:           number;
-  email:        string;
-  name:         string;
-  role:         string;
-  avatar_color: string;
-  created_at?:  string;
-  last_login?:  string;
+  id:               number;
+  email:            string;
+  name:             string;
+  role:             string;
+  avatar_color:     string;
+  created_at?:      string;
+  last_login?:      string;
+  plan_id?:         string;   // free | pro | team | enterprise
+  plan_billing?:    string;   // month | year
+  plan_expires_at?: string | null;
+  plan_active?:     boolean;  // false = подписка истекла
 }
+
+// ─── Billing (планы + оплата) ─────────────────────────────────────────────────
+
+export interface Plan {
+  id:           string;
+  name:         string;
+  price_month:  number;
+  price_year:   number;
+  max_drones:   number;
+  max_missions: number;
+  features:     string[];
+  is_popular:   boolean;
+}
+
+function billingReq<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = localStorage.getItem("sf_token");
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["X-Auth-Token"] = token;
+  return req<T>("billing", path, { ...options, headers });
+}
+
+export const billing = {
+  getPlans: () =>
+    billingReq<{ plans: Plan[] }>("/"),
+  getMyPlan: () =>
+    billingReq<{ plan: Plan & { plan_id: string; plan_billing: string; plan_expires_at: string | null } }>("/?action=my"),
+  createPayment: (data: { plan_id: string; billing: "month" | "year"; return_url: string }) =>
+    billingReq<{ ok: boolean; payment_url: string; order_number: string; amount: number }>("/?action=create-payment", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+};
 
 function authReq<T>(action: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem("sf_token");
@@ -474,4 +510,3 @@ export const authApi = {
       body:   JSON.stringify({ password }),
     }),
 };
-

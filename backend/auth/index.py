@@ -137,17 +137,37 @@ def handler(event: dict, context) -> dict:
             body  = json.loads(event.get("body") or "{}")
             email = (body.get("email") or "").strip().lower()
             pwd   = body.get("password") or ""
+            ip    = (event.get("requestContext") or {}).get("identity", {}).get("sourceIp", "unknown")
 
             if not email or not pwd:
                 return {"statusCode": 400, "headers": CORS,
                         "body": json.dumps({"error": "email и password обязательны"})}
+
+            # Rate-limit: не более 10 неудачных попыток с одного IP за 15 минут
+            cur.execute(f"""
+                SELECT COUNT(*) as cnt FROM {SCHEMA}.login_attempts
+                WHERE ip = %s AND success = false
+                  AND ts > now() - interval '15 minutes'
+            """, (ip,))
+            fail_count = int(cur.fetchone()["cnt"])
+            if fail_count >= 10:
+                return {"statusCode": 429, "headers": CORS,
+                        "body": json.dumps({"error": "Слишком много попыток. Попробуйте через 15 минут"})}
 
             cur.execute(
                 f"SELECT * FROM {SCHEMA}.users WHERE email = %s AND password_hash = %s",
                 (email, hash_password(pwd))
             )
             user = cur.fetchone()
+
+            # Логируем попытку
+            cur.execute(
+                f"INSERT INTO {SCHEMA}.login_attempts (ip, email, success) VALUES (%s, %s, %s)",
+                (ip, email, user is not None)
+            )
+
             if not user:
+                conn.commit()
                 return {"statusCode": 401, "headers": CORS,
                         "body": json.dumps({"error": "Неверный email или пароль"})}
 
@@ -157,7 +177,6 @@ def handler(event: dict, context) -> dict:
                 f"INSERT INTO {SCHEMA}.sessions (token, user_id) VALUES (%s, %s)",
                 (token, user["id"])
             )
-            # Обновляем last_login
             cur.execute(
                 f"UPDATE {SCHEMA}.users SET last_login = now() WHERE id = %s",
                 (user["id"],)
@@ -170,11 +189,14 @@ def handler(event: dict, context) -> dict:
                         "ok":    True,
                         "token": token,
                         "user":  {
-                            "id":           user["id"],
-                            "email":        user["email"],
-                            "name":         user["name"],
-                            "role":         user["role"],
-                            "avatar_color": user["avatar_color"],
+                            "id":               user["id"],
+                            "email":            user["email"],
+                            "name":             user["name"],
+                            "role":             user["role"],
+                            "avatar_color":     user["avatar_color"],
+                            "plan_id":          user["plan_id"],
+                            "plan_billing":     user["plan_billing"],
+                            "plan_active":      True,
                         },
                     })}
 
@@ -186,7 +208,9 @@ def handler(event: dict, context) -> dict:
                         "body": json.dumps({"error": "Не авторизован"})}
 
             cur.execute(f"""
-                SELECT u.id, u.email, u.name, u.role, u.avatar_color, u.created_at, u.last_login
+                SELECT u.id, u.email, u.name, u.role, u.avatar_color,
+                       u.created_at, u.last_login,
+                       u.plan_id, u.plan_billing, u.plan_expires_at
                 FROM {SCHEMA}.sessions s
                 JOIN {SCHEMA}.users u ON u.id = s.user_id
                 WHERE s.token = %s AND s.expires_at > now()
@@ -199,16 +223,37 @@ def handler(event: dict, context) -> dict:
             def fmt(v):
                 return v.isoformat() if v and hasattr(v, "isoformat") else v
 
+            # Проверяем не истёк ли платный план → если истёк, сбрасываем на free
+            plan_id  = user["plan_id"] or "free"
+            expires  = user["plan_expires_at"]
+            from datetime import datetime, timezone as tz
+            if plan_id != "free" and expires and expires < datetime.now(tz.utc):
+                cur.execute(
+                    f"UPDATE {SCHEMA}.users SET plan_id='free', plan_expires_at=NULL WHERE id=%s",
+                    (user["id"],)
+                )
+                conn.commit()
+                plan_id = "free"
+                expires = None
+
+            plan_active = plan_id != "free" or True  # free всегда активен
+            if plan_id != "free" and not expires:
+                plan_active = False
+
             return {"statusCode": 200, "headers": CORS,
                     "body": json.dumps({
                         "user": {
-                            "id":           user["id"],
-                            "email":        user["email"],
-                            "name":         user["name"],
-                            "role":         user["role"],
-                            "avatar_color": user["avatar_color"],
-                            "created_at":   fmt(user["created_at"]),
-                            "last_login":   fmt(user["last_login"]),
+                            "id":               user["id"],
+                            "email":            user["email"],
+                            "name":             user["name"],
+                            "role":             user["role"],
+                            "avatar_color":     user["avatar_color"],
+                            "created_at":       fmt(user["created_at"]),
+                            "last_login":       fmt(user["last_login"]),
+                            "plan_id":          plan_id,
+                            "plan_billing":     user["plan_billing"],
+                            "plan_expires_at":  fmt(expires),
+                            "plan_active":      plan_active,
                         }
                     })}
 

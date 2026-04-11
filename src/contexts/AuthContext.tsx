@@ -4,6 +4,8 @@ import { authApi, type User } from "@/lib/api";
 interface AuthContextValue {
   user:          User | null;
   loading:       boolean;
+  hasPlan:       boolean;   // true = активная платная подписка
+  refreshUser:   () => Promise<void>;
   login:         (email: string, password: string) => Promise<void>;
   register:      (email: string, password: string, name: string, consent: true) => Promise<void>;
   logout:        () => Promise<void>;
@@ -61,8 +63,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const res = await authApi.me();
+      setUser(res.user);
+    } catch { /* silent */ }
+  }, []);
+
+  // hasPlan = подписка оплачена и не истекла
+  const hasPlan = !!user && (
+    (user.plan_id === "free") ||   // free всегда "доступен" (покажем paywall)
+    (user.plan_active === true)
+  );
+  // Фактическая проверка: пользователь имеет ПЛАТНЫЙ активный план
+  const hasActivePaidPlan = !!user && user.plan_id !== "free" && user.plan_active === true;
+  void hasPlan; // используем hasActivePaidPlan ниже
+  const planOk = hasActivePaidPlan;
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, deleteAccount, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, hasPlan: planOk, refreshUser, login, register, logout, deleteAccount, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
