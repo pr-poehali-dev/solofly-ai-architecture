@@ -5,6 +5,7 @@ import { scanning as scanningApi } from "@/lib/api";
 import { SENSOR_MODES, getScanLogMessages, type SensorModeId, type ScanLogEntry } from "./scanning/scanningTypes";
 import ScanVisualizer from "./scanning/ScanVisualizer";
 import ScanSidebar from "./scanning/ScanSidebar";
+import ScanModel3D from "./scanning/ScanModel3D";
 
 export default function ScanningPage({ onNavigate }: { onNavigate?: (page: string) => void } = {}) {
   const { data: fleet } = useLiveFleet(5000);
@@ -17,6 +18,7 @@ export default function ScanningPage({ onNavigate }: { onNavigate?: (page: strin
   const [savedUrl, setSavedUrl] = useState<string | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
+  const [view3D, setView3D]               = useState(false);
 
   // ref для доступа к актуальным значениям внутри таймеров
   const scanLogRef        = useRef<ScanLogEntry[]>([]);
@@ -40,6 +42,7 @@ export default function ScanningPage({ onNavigate }: { onNavigate?: (page: strin
       setProgress(p => {
         if (p >= 100) {
           setScanning(false);
+          setView3D(true);
           addLog(`Сканирование завершено. Режим: ${mode.label}`, mode.color);
           return 100;
         }
@@ -103,6 +106,7 @@ export default function ScanningPage({ onNavigate }: { onNavigate?: (page: strin
     setScanLog([]);
     setSavedUrl(null);
     setAutoSaveStatus("idle");
+    setView3D(false);
     setScanning(true);
     addLog(`Запуск сканирования · ${mode.label} · дрон ${droneId}`, mode.color);
     // Создаём сессию в БД
@@ -277,12 +281,38 @@ export default function ScanningPage({ onNavigate }: { onNavigate?: (page: strin
               {!scanning && progress > 0 && progress < 100 && <span className="tag tag-warning">Пауза</span>}
               {progress === 100 && <span className="tag tag-electric">Завершено</span>}
               {!scanning && progress === 0 && <span className="tag tag-muted">Ожидание</span>}
+              {/* Переключатель 2D/3D — доступен когда есть прогресс */}
+              {progress > 0 && (
+                <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid hsl(var(--border))" }}>
+                  <button
+                    onClick={() => setView3D(false)}
+                    className="px-3 py-1 text-xs font-semibold transition-all"
+                    style={!view3D
+                      ? { background: "rgba(0,212,255,0.15)", color: "var(--electric)" }
+                      : { color: "hsl(var(--muted-foreground))" }
+                    }
+                  >2D</button>
+                  <button
+                    onClick={() => setView3D(true)}
+                    className="px-3 py-1 text-xs font-semibold transition-all flex items-center gap-1"
+                    style={view3D
+                      ? { background: "rgba(0,212,255,0.15)", color: "var(--electric)" }
+                      : { color: "hsl(var(--muted-foreground))" }
+                    }
+                  >
+                    <Icon name="Box" size={11} /> 3D
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Canvas */}
+          {/* Canvas / 3D */}
           <div className="flex-1 relative" style={{ minHeight: 280, background: "hsl(210 25% 4%)" }}>
-            <ScanVisualizer modeId={modeId} active={scanning} progress={progress} />
+            {view3D && progress > 0
+              ? <ScanModel3D mode={modeId} progress={progress} height={320} />
+              : <ScanVisualizer modeId={modeId} active={scanning} progress={progress} />
+            }
 
             {/* Overlay info */}
             <div className="absolute top-3 left-3 space-y-1">

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { MODE_LABEL, fmtDate, fmtDur, fmtNum, type ScanResultJson } from "./archiveTypes";
+import ScanModel3D from "@/pages/scanning/ScanModel3D";
+import type { SensorModeId } from "@/pages/scanning/scanningTypes";
 
 interface FileViewerProps {
   url: string;
@@ -11,7 +13,7 @@ export default function FileViewer({ url, onClose }: FileViewerProps) {
   const [data, setData] = useState<ScanResultJson | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<"summary" | "log" | "raw">("summary");
+  const [tab, setTab] = useState<"model" | "summary" | "log" | "raw">("model");
 
   useEffect(() => {
     setLoading(true);
@@ -23,7 +25,7 @@ export default function FileViewer({ url, onClose }: FileViewerProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(5,9,14,0.85)" }}>
-      <div className="w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl overflow-hidden panel"
+      <div className="w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl overflow-hidden panel"
         style={{ border: "1px solid rgba(0,212,255,0.2)" }}>
 
         {/* Header */}
@@ -53,21 +55,53 @@ export default function FileViewer({ url, onClose }: FileViewerProps) {
           <>
             {/* Tabs */}
             <div className="flex shrink-0" style={{ borderBottom: "1px solid hsl(var(--border))" }}>
-              {(["summary", "log", "raw"] as const).map(t => (
+              {(["model", "summary", "log", "raw"] as const).map(t => (
                 <button key={t} onClick={() => setTab(t)}
-                  className="flex-1 py-2.5 text-xs font-semibold transition-all"
+                  className="flex-1 py-2.5 text-xs font-semibold transition-all flex items-center justify-center gap-1"
                   style={tab === t
                     ? { color: "var(--electric)", borderBottom: "2px solid var(--electric)" }
                     : { color: "hsl(var(--muted-foreground))" }
                   }>
-                  {t === "summary" ? "Итоги" : t === "log" ? `Лог (${data.log?.length ?? 0})` : "JSON"}
+                  {t === "model" && <Icon name="Box" size={11} />}
+                  {t === "model" ? "3D Модель" : t === "summary" ? "Итоги" : t === "log" ? `Лог (${data.log?.length ?? 0})` : "JSON"}
                 </button>
               ))}
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5">
+            <div className="flex-1 overflow-y-auto">
+              {/* 3D Модель */}
+              {tab === "model" && (
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon name="Box" size={14} style={{ color: "var(--electric)" }} />
+                    <span className="font-semibold text-sm">3D-модель облака точек</span>
+                    <span className="tag tag-green ml-1">
+                      {MODE_LABEL[data.session.scan_mode] ?? data.session.scan_mode}
+                    </span>
+                  </div>
+                  <ScanModel3D
+                    mode={(data.session.scan_mode as SensorModeId) ?? "lidar_terrain"}
+                    progress={data.results.coverage_pct ?? 100}
+                    height={380}
+                  />
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    {[
+                      { label: "Точек в модели", val: Math.floor(4000 * (data.results.coverage_pct ?? 100) / 100).toLocaleString("ru-RU"), color: "var(--electric)" },
+                      { label: "Площадь",        val: `${data.results.area_km2} км²`,      color: "var(--signal-green)" },
+                      { label: "Точность",       val: data.results.accuracy_m ? `±${data.results.accuracy_m} м` : "—", color: "var(--electric)" },
+                    ].map(i => (
+                      <div key={i.label} className="p-2.5 rounded-lg text-center" style={{ background: "hsl(var(--input))" }}>
+                        <div className="hud-label mb-0.5">{i.label}</div>
+                        <div className="font-bold text-sm" style={{ color: i.color }}>{i.val}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {tab === "summary" && (
-                <div className="space-y-4">
+                <div className="p-5">
+                <div className="space-y-4 p-0">
                   {/* Сенсор */}
                   <div>
                     <div className="hud-label mb-2">Сенсор</div>
@@ -118,10 +152,11 @@ export default function FileViewer({ url, onClose }: FileViewerProps) {
                     <span>Версия: {data.version}</span>
                   </div>
                 </div>
+                </div>
               )}
 
               {tab === "log" && (
-                <div className="space-y-1.5">
+                <div className="p-5 space-y-1.5">
                   {(!data.log || data.log.length === 0)
                     ? <p className="text-xs text-muted-foreground">Лог пуст</p>
                     : data.log.map((line, i) => (
@@ -138,10 +173,12 @@ export default function FileViewer({ url, onClose }: FileViewerProps) {
               )}
 
               {tab === "raw" && (
+                <div className="p-5">
                 <pre className="text-xs font-mono overflow-x-auto leading-relaxed"
                   style={{ color: "hsl(var(--muted-foreground))", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
                   {JSON.stringify(data, null, 2)}
                 </pre>
+                </div>
               )}
             </div>
 
