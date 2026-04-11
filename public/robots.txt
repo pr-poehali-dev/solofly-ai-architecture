@@ -1,14 +1,41 @@
 User-agent: *
 Allow: /
+Allow: /?page=dronebuilder
+Allow: /?privacy=1
 
+# Закрываем страницы приложения от индексации
+Disallow: /?page=dashboard
+Disallow: /?page=missions
+Disallow: /?page=flightcontrol
+Disallow: /?page=ai
+Disallow: /?page=vision
+Disallow: /?page=swarm
+Disallow: /?page=monitoring
+Disallow: /?page=flightlog
+Disallow: /?page=security
+Disallow: /?page=api
+Disallow: /?page=support
+Disallow: /?page=integrations
+Disallow: /?page=scanning
+Disallow: /?page=scanarchive
+Disallow: /?page=ucp
+Disallow: /?page=profile
+Disallow: /?page=droneconnect
+Disallow: /?page=auth
+Disallow: /grant-doc
+
+# Специальные боты
 User-agent: Googlebot
 Allow: /
+Allow: /?page=dronebuilder
+Allow: /?privacy=1
 
 User-agent: Bingbot
 Allow: /
 
 User-agent: Yandex
 Allow: /
+Allow: /?page=dronebuilder
 
 User-agent: Twitterbot
 Allow: /
@@ -16,4 +43,4 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-Sitemap: https://solofly-ai-architecture.poehali.dev/sitemap.xml
+Sitemap: https://solofly.ru/sitemap.xml

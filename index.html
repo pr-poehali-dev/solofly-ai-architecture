@@ -20,58 +20,102 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <meta name="description" content="SoloFly — автономная система управления БПЛА на базе ИИ. Планирует маршруты, управляет полётом и самообучается после каждой миссии. Точность распознавания 97.4%, задержка решений менее 12 мс."/>
+    <meta name="description" content="SoloFly — платформа автономного управления БПЛА для нефтегаза, энергетики, АПК и строительства. Инспекция ЛЭП, мониторинг трубопроводов, агромониторинг без оператора. MAVLink, Ardupilot, PX4."/>
     <meta name="author" content="ООО МАТ-Лабс"/>
-    <meta name="keywords" content="дрон, БПЛА, автономный полёт, ИИ, управление беспилотником, SoloFly"/>
+    <meta name="keywords" content="управление БПЛА, автономный дрон, платформа для дронов, инспекция дроном, мониторинг БПЛА, беспилотник ИИ, SoloFly, MAVLink, Ardupilot, PX4, дрон нефтегаз, агромониторинг, инспекция ЛЭП, дрон строительство, БПЛА Россия, управление беспилотником"/>
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"/>
+    <meta name="geo.region" content="RU"/>
+    <meta name="geo.country" content="RU"/>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="SoloFly — БПЛА летит. Сам. Всегда.">
-    <meta property="og:description" content="Автономная система управления дроном на базе ИИ. Планирует маршруты, управляет полётом, анализирует среду и самообучается после каждой миссии. Без оператора.">
+    <meta property="og:site_name" content="SoloFly">
+    <meta property="og:title" content="SoloFly — Автономное управление БПЛА для промышленности">
+    <meta property="og:description" content="Платформа управления дронами для нефтегаза, энергетики, АПК и строительства. Инспекция без оператора. MAVLink, Ardupilot, PX4. Данные в России.">
     <meta property="og:image" content="https://cdn.poehali.dev/projects/5ef72b5b-2023-4dff-b313-89105094219f/files/ef12817c-6954-4f4e-ab4a-34ef3b34cbd0.jpg">
-    <meta property="og:image:width" content="1024">
-    <meta property="og:image:height" content="1024">
-    <meta property="og:image:alt" content="SoloFly — командный центр управления автономными дронами с ИИ">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="SoloFly — командный центр управления автономными дронами">
     <meta property="og:locale" content="ru_RU">
+    <meta property="og:url" content="https://solofly-ai-architecture.poehali.dev/">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="SoloFly — БПЛА летит. Сам. Всегда.">
-    <meta name="twitter:description" content="Автономная система управления дроном на базе ИИ. Точность 97.4%, решения за 12 мс, полная автономность.">
+    <meta name="twitter:site" content="@solofly_ai">
+    <meta name="twitter:title" content="SoloFly — Автономное управление БПЛА для промышленности">
+    <meta name="twitter:description" content="Платформа дронов для нефтегаза, энергетики, АПК. Инспекция без оператора. MAVLink, Ardupilot, PX4.">
     <meta name="twitter:image" content="https://cdn.poehali.dev/projects/5ef72b5b-2023-4dff-b313-89105094219f/files/ef12817c-6954-4f4e-ab4a-34ef3b34cbd0.jpg">
     <!-- Canonical -->
-    <link rel="canonical" href="https://solofly-ai-architecture.poehali.dev/"/>
+    <link rel="canonical" href="https://solofly.ru/"/>
+    <link rel="alternate" hreflang="ru" href="https://solofly.ru/"/>
+    <!-- JSON-LD: Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "ООО МАТ-Лабс",
+      "url": "https://mat-labs.ru",
+      "logo": "https://cdn.poehali.dev/projects/5ef72b5b-2023-4dff-b313-89105094219f/files/ef12817c-6954-4f4e-ab4a-34ef3b34cbd0.jpg",
+      "foundingDate": "2026",
+      "description": "Российская технологическая компания, разрабатывающая программное обеспечение для автономного управления БПЛА.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "RU"
+      },
+      "sameAs": []
+    }
+    </script>
     <!-- JSON-LD: SoftwareApplication -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "SoloFly",
-      "alternateName": "SoloFly — Автономное управление БПЛА",
-      "description": "Автономная система управления БПЛА на базе ИИ. Планирует маршруты, управляет полётом, анализирует среду и самообучается после каждой миссии без оператора.",
-      "url": "https://solofly-ai-architecture.poehali.dev/",
+      "alternateName": "SoloFly — Платформа управления БПЛА",
+      "description": "Платформа автономного управления БПЛА для промышленного применения: нефтегаз, энергетика, АПК, строительство, безопасность. Работает с Ardupilot, PX4 и MAVLink v2. Данные хранятся в России.",
+      "url": "https://solofly.ru/",
       "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Web, iOS, Android",
+      "applicationSubCategory": "Drone Management",
+      "operatingSystem": "Web",
       "inLanguage": "ru-RU",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "RUB",
-        "description": "Бесплатная регистрация"
-      },
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Про",
+          "price": "2900",
+          "priceCurrency": "RUB",
+          "priceSpecification": {
+            "@type": "UnitPriceSpecification",
+            "price": "2900",
+            "priceCurrency": "RUB",
+            "unitText": "месяц"
+          }
+        },
+        {
+          "@type": "Offer",
+          "name": "Команда",
+          "price": "7900",
+          "priceCurrency": "RUB"
+        }
+      ],
       "featureList": [
-        "Автономное планирование маршрутов",
-        "Компьютерное зрение 97.4%",
-        "Самообучение ИИ после каждого полёта",
+        "Автономное планирование маршрутов БПЛА",
+        "Инспекция ЛЭП и трубопроводов дроном",
+        "Агромониторинг и картографирование угодий",
+        "Охрана периметра без оператора",
+        "Управление роем до 20 дронов",
+        "3D-сканирование объектов",
         "Телеметрия 300+ параметров в реальном времени",
-        "Отказоустойчивость и безопасная посадка"
+        "Поддержка MAVLink, Ardupilot, PX4",
+        "Данные хранятся в России, соответствие 152-ФЗ"
       ],
       "author": {
         "@type": "Organization",
         "name": "ООО МАТ-Лабс",
         "url": "https://mat-labs.ru"
       },
-      "image": "https://cdn.poehali.dev/projects/5ef72b5b-2023-4dff-b313-89105094219f/files/ef12817c-6954-4f4e-ab4a-34ef3b34cbd0.jpg"
+      "image": "https://cdn.poehali.dev/projects/5ef72b5b-2023-4dff-b313-89105094219f/files/ef12817c-6954-4f4e-ab4a-34ef3b34cbd0.jpg",
+      "screenshot": "https://cdn.poehali.dev/projects/5ef72b5b-2023-4dff-b313-89105094219f/files/ef12817c-6954-4f4e-ab4a-34ef3b34cbd0.jpg"
     }
     </script>
-    <!-- JSON-LD: FAQPage (для сниппетов Google) -->
+    <!-- JSON-LD: FAQPage (для сниппетов Google и Яндекс) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -79,34 +123,58 @@
       "mainEntity": [
         {
           "@type": "Question",
-          "name": "Нужен ли оператор для управления дроном в SoloFly?",
+          "name": "Что такое SoloFly?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Нет. SoloFly — полностью автономная система. Дрон самостоятельно планирует маршрут, выполняет миссию и приземляется. Оператор может наблюдать за полётом в реальном времени через командный центр."
+            "text": "SoloFly — российская облачная платформа для автономного управления БПЛА (дронами). Используется для инспекции промышленных объектов, мониторинга ЛЭП и трубопроводов, агромониторинга, охраны периметра и 3D-картографирования. Работает с дронами на Ardupilot и PX4 через MAVLink v2. Данные хранятся в России."
           }
         },
         {
           "@type": "Question",
-          "name": "Какова точность распознавания объектов?",
+          "name": "Для каких отраслей подходит платформа управления БПЛА SoloFly?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Система VisionCore обеспечивает точность распознавания 97.4% при скорости движения дрона до 120+ км/ч. Распознаются: люди, транспорт, здания, препятствия, ландшафт."
+            "text": "SoloFly применяется в нефтегазовой отрасли (мониторинг трубопроводов), энергетике (инспекция ЛЭП и ветрогенераторов), сельском хозяйстве (агромониторинг и картографирование угодий), строительстве (3D-инспекция объектов), безопасности (патрулирование периметра), телекоме (инспекция вышек связи)."
           }
         },
         {
           "@type": "Question",
-          "name": "Как быстро ИИ принимает решения?",
+          "name": "Нужен ли оператор для управления дроном?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Задержка принятия решений составляет менее 12 мс. Все вычисления выполняются на борту дрона — без задержки на передачу данных в облако."
+            "text": "Нет. До 85% типовых миссий выполняется без участия оператора. Дрон самостоятельно летит по маршруту, анализирует данные и возвращается на базу. Оператор наблюдает через веб-интерфейс."
           }
         },
         {
           "@type": "Question",
-          "name": "Можно ли управлять несколькими дронами одновременно?",
+          "name": "Какие дроны совместимы с SoloFly?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Да. SoloFly поддерживает режим роя БПЛА с координацией, распределением задач и обменом данными между дронами в реальном времени."
+            "text": "SoloFly совместима с любыми дронами на базе Ardupilot и PX4 с протоколом MAVLink v2: Pixhawk, Cube Orange, а также пользовательские сборки с бортовым компьютером Raspberry Pi или NVIDIA Jetson Nano."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Где хранятся данные с дронов?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Все данные хранятся на серверах в России в соответствии с требованиями 152-ФЗ. Никакой иностранной инфраструктуры. Телеметрия, видео и результаты миссий не передаются за пределы РФ."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Сколько стоит платформа управления БПЛА SoloFly?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Тариф «Про» — 2 900 ₽/мес (до 5 дронов), «Команда» — 7 900 ₽/мес (до 20 дронов), Enterprise — по запросу. Регистрация и базовый доступ бесплатны. Оплата через ЮKassa."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Работает ли система без GPS?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Система разрабатывает алгоритмы навигации без GPS в рамках НИОКР 2026 года. Текущая версия использует GPS/ГЛОНАСС в сочетании с компьютерным зрением для повышения надёжности навигации."
           }
         }
       ]

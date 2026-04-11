@@ -2,45 +2,29 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
+  <!-- Главная страница / лендинг -->
   <url>
-    <loc>https://solofly-ai-architecture.poehali.dev/</loc>
-    <lastmod>2026-04-11</lastmod>
+    <loc>https://solofly.ru/</loc>
+    <lastmod>2026-04-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://solofly-ai-architecture.poehali.dev/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://solofly.ru/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solofly.ru/"/>
   </url>
 
+  <!-- Конструктор БПЛА — бесплатный публичный раздел -->
   <url>
-    <loc>https://solofly-ai-architecture.poehali.dev/?page=dronebuilder</loc>
-    <lastmod>2026-04-11</lastmod>
+    <loc>https://solofly.ru/?page=dronebuilder</loc>
+    <lastmod>2026-04-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://solofly.ru/?page=dronebuilder"/>
   </url>
 
+  <!-- Политика конфиденциальности -->
   <url>
-    <loc>https://solofly-ai-architecture.poehali.dev/?page=pricing</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <url>
-    <loc>https://solofly-ai-architecture.poehali.dev/?page=dashboard</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <url>
-    <loc>https://solofly-ai-architecture.poehali.dev/?page=missions</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
-  <url>
-    <loc>https://solofly-ai-architecture.poehali.dev/?privacy=1</loc>
-    <lastmod>2026-04-11</lastmod>
+    <loc>https://solofly.ru/?privacy=1</loc>
+    <lastmod>2026-04-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
