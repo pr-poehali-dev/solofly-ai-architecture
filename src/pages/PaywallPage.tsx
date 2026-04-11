@@ -51,18 +51,57 @@ export default function PaywallPage({ onSuccess }: PaywallPageProps) {
     ? Math.round((1 - plan.price_year / (plan.price_month * 12)) * 100)
     : 0;
 
+  const expiresLabel = user?.plan_expires_at
+    ? new Date(user.plan_expires_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })
+    : null;
+  const daysLeft = user?.plan_expires_at
+    ? Math.ceil((new Date(user.plan_expires_at).getTime() - Date.now()) / 86400000)
+    : null;
+
   return (
-    <div className="min-h-screen grid-bg flex items-center justify-center p-6">
-      <div className="w-full max-w-3xl fade-up">
-        {/* Заголовок */}
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-            style={{ background: "rgba(0,212,255,0.12)", border: "1px solid rgba(0,212,255,0.25)" }}>
-            <Icon name="Lock" size={24} style={{ color: "var(--electric)" }} />
+    <div className={showCurrentPlan ? "p-6 space-y-5 fade-up" : "min-h-screen grid-bg flex items-center justify-center p-6"}>
+      <div className={showCurrentPlan ? "" : "w-full max-w-3xl fade-up"}>
+
+        {/* Текущий план — только внутри приложения */}
+        {showCurrentPlan && user?.plan_id && user.plan_id !== "free" && (
+          <div className="panel rounded-2xl p-5" style={{ border: "1px solid rgba(0,255,136,0.2)" }}>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <div className="hud-label mb-1">Активная подписка</div>
+                <div className="text-xl font-bold flex items-center gap-2">
+                  {user.plan_id.charAt(0).toUpperCase() + user.plan_id.slice(1)}
+                  <span className="tag tag-green">Активна</span>
+                </div>
+                {expiresLabel && (
+                  <div className="text-sm mt-1" style={{ color: daysLeft !== null && daysLeft <= 7 ? "var(--warning)" : "var(--muted-foreground)" }}>
+                    {daysLeft !== null && daysLeft <= 7
+                      ? `⚠ Истекает ${expiresLabel} — через ${daysLeft} дн.`
+                      : `Действует до ${expiresLabel}`}
+                  </div>
+                )}
+              </div>
+              <div className="text-xs px-3 py-2 rounded-lg" style={{ background: "hsl(var(--input))" }}>
+                {user.plan_billing === "year" ? "Годовая" : "Месячная"} подписка
+              </div>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold mb-2">Активируйте доступ</h1>
-          <p className="text-muted-foreground text-sm">
-            Полный доступ к платформе SoloFly — управление БПЛА, миссии, ИИ-ядро
+        )}
+
+        {/* Заголовок */}
+        <div className={showCurrentPlan ? "" : "text-center mb-8"}>
+          {!showCurrentPlan && (
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              style={{ background: "rgba(0,212,255,0.12)", border: "1px solid rgba(0,212,255,0.25)" }}>
+              <Icon name="Lock" size={24} style={{ color: "var(--electric)" }} />
+            </div>
+          )}
+          <h1 className={`font-bold mb-1 ${showCurrentPlan ? "text-xl" : "text-2xl text-center"}`}>
+            {showCurrentPlan ? "Тарифные планы" : "Активируйте доступ"}
+          </h1>
+          <p className="text-muted-foreground text-sm mb-6">
+            {showCurrentPlan
+              ? "Выберите план или продлите подписку"
+              : "Полный доступ к платформе SoloFly — управление БПЛА, миссии, ИИ-ядро"}
           </p>
         </div>
 

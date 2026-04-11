@@ -108,6 +108,7 @@ export default function Index() {
       case "profile":       return <ProfilePage />;
       case "privacy":       return <PrivacyPage />;
       case "droneconnect":  return <DroneConnectPage />;
+      case "pricing":       return <PaywallPage onSuccess={refreshUser} showCurrentPlan />;
       case "auth":          return <DashboardPage />;
       default:              return <DashboardPage />;
     }

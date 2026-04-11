@@ -2,6 +2,21 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { testimonials, faqs } from "./landingData";
 
+const PLANS = [
+  {
+    id: "pro", name: "Про", price_month: 2900, price_year: 24900, popular: true,
+    features: ["5 дронов", "Неограниченные миссии", "ИИ-ядро", "Управление роем", "Сканирование", "История полётов"],
+  },
+  {
+    id: "team", name: "Команда", price_month: 7900, price_year: 69900, popular: false,
+    features: ["20 дронов", "Совместная работа", "API доступ", "Мониторинг и отчёты", "Приоритетная поддержка", "Все функции Про"],
+  },
+  {
+    id: "enterprise", name: "Enterprise", price_month: 49000, price_year: 0, popular: false,
+    features: ["Без ограничений", "On-premise", "SLA 99.9%", "Выделенный менеджер", "Кастомная интеграция", "Обучение команды"],
+  },
+];
+
 interface LandingSocialProps {
   onNavigate: (p: string) => void;
 }
