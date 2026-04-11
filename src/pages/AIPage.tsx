@@ -207,6 +207,9 @@ export default function AIPage() {
               <h2 className="font-semibold text-sm">Классы распознавания (VisionCore)</h2>
               <span className="tag tag-electric">97.4% avg</span>
             </div>
+            <div className="mb-3 text-xs px-2 py-1.5 rounded-lg" style={{ background: "rgba(0,212,255,0.06)", color: "var(--muted-foreground)", border: "1px solid rgba(0,212,255,0.12)" }}>
+              Демо-данные — обновятся при подключении модуля компьютерного зрения
+            </div>
             <div className="space-y-3">
               {visionClasses.map(c => (
                 <div key={c.name} className="flex items-center gap-3">
@@ -250,7 +253,10 @@ export default function AIPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="panel rounded-xl p-5">
             <h2 className="font-semibold text-sm mb-1">Обучение с подкреплением</h2>
-            <p className="text-xs text-muted-foreground mb-4">Алгоритмы PPO и SAC · Среда: Gazebo / AirSim → Real</p>
+            <p className="text-xs text-muted-foreground mb-2">Алгоритмы PPO и SAC · Среда: Gazebo / AirSim → Real</p>
+            <div className="mb-3 text-xs px-2 py-1.5 rounded-lg" style={{ background: "rgba(0,212,255,0.06)", color: "var(--muted-foreground)", border: "1px solid rgba(0,212,255,0.12)" }}>
+              Демо-данные — интеграция с обучающей средой в разработке
+            </div>
             <div className="flex items-end gap-1 h-28 mb-3">
               {[88, 89, 89.5, 90.2, 91, 91.8, 92.1, 92.8, 93.2, 93.4, 93.9, 94.2].map((v, i) => (
                 <div key={i} className="flex-1 rounded-t transition-all" style={{

@@ -32,6 +32,9 @@ def serialize_row(row: dict) -> dict:
     for k in ("start_time", "eta", "ended_at", "created_at"):
         if d.get(k) and hasattr(d[k], "isoformat"):
             d[k] = d[k].isoformat()
+    # waypoints_json уже является dict/list из psycopg2 — оставляем как есть
+    if "waypoints_json" not in d:
+        d["waypoints_json"] = []
     return d
 
 
@@ -94,14 +97,17 @@ def handler(event: dict, context) -> dict:
                 if not body.get(f):
                     return {"statusCode": 400, "headers": CORS,
                             "body": json.dumps({"error": f"{f} is required"})}
+            import json as _json
+            wps_json = body.get("waypoints_json", [])
+            wps_count = len(wps_json) if wps_json else body.get("waypoints", 0)
             cur.execute(
                 f"""INSERT INTO {SCHEMA}.missions
-                    (code, name, drone_id, type, status, waypoints, tasks,
+                    (code, name, drone_id, type, status, waypoints, waypoints_json, tasks,
                      weather_wind, weather_vis, weather_temp, weather_risk)
-                    VALUES (%s,%s,%s,%s,'planned',%s,%s,%s,%s,%s,%s)
+                    VALUES (%s,%s,%s,%s,'planned',%s,%s,%s,%s,%s,%s,%s)
                     RETURNING id, code""",
                 (body["code"], body["name"], body["drone_id"], body["type"],
-                 body.get("waypoints", 0), body.get("tasks", []),
+                 wps_count, _json.dumps(wps_json), body.get("tasks", []),
                  body.get("weather_wind", 0), body.get("weather_vis", "хорошая"),
                  body.get("weather_temp", 15), body.get("weather_risk", "low"))
             )
@@ -117,12 +123,16 @@ def handler(event: dict, context) -> dict:
                         "body": json.dumps({"error": "id required"})}
             body = json.loads(event.get("body") or "{}")
             allowed = ["status", "progress", "obstacles_avoided",
-                       "route_adjustments", "distance_km"]
+                       "route_adjustments", "distance_km", "waypoints_json"]
             updates = {f: body[f] for f in allowed if f in body}
             if updates.get("status") in ("done", "aborted"):
                 updates["ended_at"] = datetime.now(timezone.utc).isoformat()
             if updates.get("status") == "active":
                 updates["start_time"] = datetime.now(timezone.utc).isoformat()
+            # waypoints_json — JSONB, сериализуем строкой
+            if "waypoints_json" in updates:
+                updates["waypoints_json"] = json.dumps(updates["waypoints_json"])
+                updates["waypoints"] = len(body.get("waypoints_json", []))
             if not updates:
                 return {"statusCode": 400, "headers": CORS,
                         "body": json.dumps({"error": "nothing to update"})}

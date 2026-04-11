@@ -34,19 +34,25 @@ export default function MissionDetail({
     );
   }
 
-  // Генерируем примерные точки по кругу вокруг дрона миссии
+  // Используем реальные координаты из БД, или генерируем по кругу как фолбэк
   const drone   = drones.find(d => d.id === sel.drone_id);
   const baseLat = drone ? Number(drone.lat) : 55.751;
   const baseLon = drone ? Number(drone.lon) : 37.618;
-  const previewWps = Array.from({ length: sel.waypoints }).map((_, i) => {
-    const angle = (i / Math.max(sel.waypoints, 1)) * Math.PI * 2;
-    const r = 0.003 + Math.sin(i * 1.7) * 0.001;
-    return {
-      lat:    baseLat + Math.cos(angle) * r,
-      lon:    baseLon + Math.sin(angle) * r,
-      action: sel.tasks?.[i] ?? "",
-    };
-  });
+
+  const savedWps = (sel as Mission & { waypoints_json?: { lat: number; lon: number; action?: string | null }[] }).waypoints_json;
+  const hasRealWps = Array.isArray(savedWps) && savedWps.length > 0;
+
+  const previewWps = hasRealWps
+    ? savedWps.map(w => ({ lat: w.lat, lon: w.lon, action: w.action ?? "" }))
+    : Array.from({ length: sel.waypoints }).map((_, i) => {
+        const angle = (i / Math.max(sel.waypoints, 1)) * Math.PI * 2;
+        const r = 0.003 + Math.sin(i * 1.7) * 0.001;
+        return {
+          lat:    baseLat + Math.cos(angle) * r,
+          lon:    baseLon + Math.sin(angle) * r,
+          action: sel.tasks?.[i] ?? "",
+        };
+      });
 
   return (
     <>

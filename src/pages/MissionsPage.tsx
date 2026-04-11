@@ -38,14 +38,15 @@ export default function MissionsPage() {
     setFormLoading(true);
     setFormError(null);
     try {
-      const code = `MSN-${String(Date.now()).slice(-3)}`;
+      const code = `MSN-${String(Date.now()).slice(-6)}`;
       await missionsApi.create({
         code,
-        name:      form.name.trim(),
-        drone_id:  form.drone_id,
-        type:      form.type,
-        waypoints: wps.length,
-        tasks:     wps.filter(w => w.action).map(w => w.action!),
+        name:           form.name.trim(),
+        drone_id:       form.drone_id,
+        type:           form.type,
+        waypoints:      wps.length,
+        waypoints_json: wps.map(w => ({ lat: w.lat, lon: w.lon, action: w.action ?? null })),
+        tasks:          wps.filter(w => w.action).map(w => w.action!),
       });
       setShowBuilder(false);
       await refresh();

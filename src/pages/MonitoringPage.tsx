@@ -15,6 +15,8 @@ export default function MonitoringPage() {
   const [missionsData, setMissionsData] = useState<{ total: number; stats: Record<string, number> } | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const loadData = async () => {
     try {
       const [ev, ms] = await Promise.all([
@@ -23,8 +25,12 @@ export default function MonitoringPage() {
       ]);
       setEventsData(ev);
       setMissionsData(ms);
-    } catch { /* silent */ }
-    finally { setLoading(false); }
+      setLoadError(null);
+    } catch {
+      setLoadError("Нет соединения с сервером. Повторная попытка...");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -68,11 +74,49 @@ export default function MonitoringPage() {
           <button onClick={loadData} className="btn-ghost px-4 py-2 rounded-lg text-xs flex items-center gap-2">
             <Icon name="RefreshCw" size={13} /> Обновить
           </button>
-          <button className="btn-electric px-4 py-2 rounded-lg text-xs flex items-center gap-2">
+          <button
+            onClick={() => {
+              const w = window.open("", "_blank");
+              if (!w) return;
+              const now = new Date().toLocaleString("ru-RU");
+              const evRows = sortedEvents.map(e =>
+                `<tr style="border-bottom:1px solid #eee">
+                  <td style="padding:6px">${e.level.toUpperCase()}</td>
+                  <td style="padding:6px">${e.drone_id ?? "—"}</td>
+                  <td style="padding:6px">${e.message}</td>
+                  <td style="padding:6px">${e.resolved ? "✓" : "⚠"}</td>
+                  <td style="padding:6px">${new Date(e.ts).toLocaleString("ru-RU")}</td>
+                </tr>`
+              ).join("");
+              w.document.write(`<!DOCTYPE html><html><head><title>SoloFly Отчёт ${now}</title>
+                <style>body{font-family:Arial,sans-serif;padding:24px}h1{color:#05090e}table{width:100%;border-collapse:collapse}th{background:#05090e;color:white;padding:8px;text-align:left}</style>
+                </head><body>
+                <h1>SoloFly — Мониторинг</h1>
+                <p>Сформирован: ${now}</p>
+                <h2>Сводка</h2>
+                <p>Событий всего: <b>${totalEvents}</b> · Нерешённых: <b>${unresolved}</b> · Миссий активно: <b>${activeMissions}</b> · Завершено: <b>${doneMissions}</b></p>
+                <h2>Системные события</h2>
+                <table><thead><tr><th>Уровень</th><th>Дрон</th><th>Событие</th><th>Статус</th><th>Время</th></tr></thead>
+                <tbody>${evRows}</tbody></table>
+                </body></html>`);
+              w.document.close();
+              w.print();
+            }}
+            className="btn-electric px-4 py-2 rounded-lg text-xs flex items-center gap-2"
+          >
             <Icon name="FileDown" size={13} /> Сводный PDF
           </button>
         </div>
       </div>
+
+      {/* Баннер ошибки */}
+      {loadError && (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
+          style={{ background: "rgba(255,59,48,0.08)", color: "var(--danger)", border: "1px solid rgba(255,59,48,0.2)" }}>
+          <Icon name="WifiOff" size={14} />
+          {loadError}
+        </div>
+      )}
 
       {/* Live metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

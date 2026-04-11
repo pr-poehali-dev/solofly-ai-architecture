@@ -188,6 +188,7 @@ export interface Mission {
   status: string;
   progress: number;
   waypoints: number;
+  waypoints_json?: { lat: number; lon: number; action?: string | null }[];
   tasks: string[];
   weather_wind: number;
   weather_vis: string;
@@ -217,14 +218,16 @@ export const missions = {
     req<{ mission: Mission }>("missions", `/?id=${id}`),
   create: (data: {
     code: string; name: string; drone_id: string; type: string;
-    waypoints?: number; tasks?: string[];
+    waypoints?: number;
+    waypoints_json?: { lat: number; lon: number; action?: string | null }[];
+    tasks?: string[];
     weather_wind?: number; weather_vis?: string;
     weather_temp?: number; weather_risk?: string;
   }) => req<{ ok: boolean; id: number; code: string }>("missions", "/", {
     method: "POST",
     body: JSON.stringify(data),
   }),
-  update: (id: number, data: Partial<Pick<Mission, "status" | "progress" | "obstacles_avoided" | "route_adjustments" | "distance_km">>) =>
+  update: (id: number, data: Partial<Pick<Mission, "status" | "progress" | "obstacles_avoided" | "route_adjustments" | "distance_km" | "waypoints_json">>) =>
     req<{ ok: boolean }>("missions", `/?id=${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),

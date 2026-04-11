@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import Icon from "@/components/ui/icon";
 import { useLiveFleet } from "@/hooks/useLiveFleet";
 import { useEvents } from "@/hooks/useEvents";
+import LiveMap, { type MapDrone } from "@/components/LiveMap";
 
 const ROLE_COLORS: Record<string, string> = {
   leader:  "var(--electric)",
@@ -45,12 +46,26 @@ export default function SwarmPage() {
     });
   }, [drones]);
 
-  const sel = dronePositions.find(d => d.id === (selected ?? drones[0]?.id));
+  const sel = drones.find(d => d.id === (selected ?? drones[0]?.id));
 
   // Соседние дроны (в рое — все остальные летящие)
-  const linked = dronePositions
+  const linked = drones
     .filter(d => d.id !== sel?.id && d.status === "flight")
     .map(d => d.id);
+
+  // MapDrones для LiveMap — реальные координаты
+  const mapDrones = useMemo<MapDrone[]>(() =>
+    drones
+      .filter(d => Number(d.lat) && Number(d.lon))
+      .map(d => ({
+        id: d.id, name: d.name, status: d.status,
+        lat: Number(d.lat), lon: Number(d.lon),
+        altitude: Number(d.altitude), heading: Number(d.heading),
+        speed: Number(d.speed), battery: d.battery,
+        is_real: d.is_real, flight_mode: d.flight_mode,
+      })),
+    [drones]
+  );
 
   // Последние события роя из БД
   const swarmEvents = useMemo(() => {
@@ -96,75 +111,14 @@ export default function SwarmPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-        {/* Swarm map */}
+        {/* Swarm map — реальная карта OSM */}
         <div className="lg:col-span-3 panel rounded-xl overflow-hidden">
-          <div className="relative h-72 grid-bg radar-bg">
-            <div className="scan-line" />
-
-            {/* Линии связи между летящими дронами */}
-            <svg className="absolute inset-0 w-full h-full" style={{ pointerEvents: "none" }}>
-              {dronePositions.filter(d => d.status === "flight").flatMap((d, _, arr) =>
-                arr.filter(t => t.id > d.id).map(t => (
-                  <line
-                    key={`${d.id}-${t.id}`}
-                    x1={`${d.x}%`} y1={`${d.y}%`}
-                    x2={`${t.x}%`} y2={`${t.y}%`}
-                    stroke="rgba(0,212,255,0.2)" strokeWidth="1" strokeDasharray="4,4"
-                  />
-                ))
-              )}
-            </svg>
-
-            {/* Дроны */}
-            {loading && drones.length === 0
-              ? (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="hud-label animate-pulse">Загрузка флота…</span>
-                </div>
-              )
-              : dronePositions.map(d => {
-                  const color = roleColor(d.role);
-                  const isSelected = d.id === (selected ?? drones[0]?.id);
-                  return (
-                    <button
-                      key={d.id}
-                      onClick={() => setSelected(d.id)}
-                      className="absolute -translate-x-1/2 -translate-y-1/2 transition-all"
-                      style={{ left: `${d.x}%`, top: `${d.y}%` }}
-                    >
-                      <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center transition-all"
-                        style={{
-                          background: isSelected ? `${color}25` : "rgba(0,0,0,0.5)",
-                          border: `2px solid ${color}`,
-                          boxShadow: isSelected ? `0 0 16px ${color}60` : "none",
-                        }}
-                      >
-                        <Icon
-                          name={d.status === "flight" ? "Navigation" : d.status === "charging" ? "Zap" : "Wifi"}
-                          fallback="Navigation"
-                          size={16}
-                          style={{ color }}
-                        />
-                      </div>
-                      <div className="text-center mt-1 hud-label" style={{ fontSize: 9, color }}>{d.id}</div>
-                    </button>
-                  );
-                })
-            }
-
-            <div className="absolute top-3 left-3 tag tag-electric">Карта роя · Live</div>
-
-            {/* Легенда ролей */}
-            <div className="absolute bottom-3 left-3 flex gap-2 flex-wrap">
-              {Object.entries(ROLE_LABELS).map(([role, label]) => (
-                <span key={role} className="flex items-center gap-1.5 text-xs" style={{ color: roleColor(role) }}>
-                  <span className="w-2 h-2 rounded-full" style={{ background: roleColor(role) }} />
-                  {label}
-                </span>
-              ))}
-            </div>
-          </div>
+          <LiveMap
+            drones={mapDrones}
+            height={320}
+            selectedDroneId={selected ?? drones[0]?.id ?? null}
+            onSelectDrone={setSelected}
+          />
 
           {/* Детали выбранного дрона */}
           {sel && (

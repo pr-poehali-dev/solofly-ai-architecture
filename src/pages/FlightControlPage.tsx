@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import { useLiveFleet } from "@/hooks/useLiveFleet";
 import LiveMap, { type MapDrone } from "@/components/LiveMap";
-import { fleet } from "@/lib/api";
+import { fleet, telemetry, type TelemetryPoint } from "@/lib/api";
 import AIExplainPanel from "@/components/AIExplainPanel";
 import MobileFlightControl from "@/components/MobileFlightControl";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -27,6 +27,21 @@ export default function FlightControlPage() {
   const [operatorPos, setOperatorPos] = useState<{ lat: number; lon: number } | null>(null);
   const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "ok" | "denied">("idle");
   const [distanceToDrone, setDistanceToDrone] = useState<number | null>(null);
+  const [liveTel, setLiveTel] = useState<TelemetryPoint | null>(null);
+  const telTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Поллинг телеметрии для roll/pitch/yaw в реальном времени
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        const res = await telemetry.get(selDroneId, 1);
+        if (res.points.length > 0) setLiveTel(res.points[0]);
+      } catch { /* silent */ }
+    };
+    poll();
+    telTimerRef.current = setInterval(poll, 1500);
+    return () => { if (telTimerRef.current) clearInterval(telTimerRef.current); };
+  }, [selDroneId]);
 
   // Геолокация оператора
   const requestGeo = () => {
@@ -109,12 +124,11 @@ export default function FlightControlPage() {
     },
   } : null;
 
-  // Пытаемся взять roll/pitch из последней телеметрии
-  if (drone && droneRaw?.telemetry_history && droneRaw.telemetry_history.length > 0) {
-    const last = droneRaw.telemetry_history[0];
-    drone.roll = Number(last.roll ?? 0);
-    drone.pitch = Number(last.pitch ?? 0);
-    drone.yaw = Number(last.yaw ?? drone.heading);
+  // Roll/pitch из живой телеметрии (поллинг 1.5 сек)
+  if (drone && liveTel) {
+    drone.roll  = Number(liveTel.roll ?? 0);
+    drone.pitch = Number(liveTel.pitch ?? 0);
+    drone.yaw   = Number(liveTel.yaw ?? drone.heading);
   }
 
   const selDrone = selDroneId;
