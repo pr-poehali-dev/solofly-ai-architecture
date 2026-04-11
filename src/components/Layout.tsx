@@ -84,14 +84,23 @@ export default function Layout({ currentPage, onNavigate, children, isLanding }:
               </div>
               <span className="font-bold text-base tracking-tight">Solo<span className="gradient-text">Fly</span></span>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
-                className="btn-ghost px-4 py-2 rounded-lg text-xs items-center gap-1.5 hidden sm:flex"
-              >
-                <Icon name="CreditCard" size={12} /> Тарифы
-              </button>
-              <button onClick={() => onNavigate("dashboard")} className="btn-ghost px-4 py-2 rounded-lg text-xs">
+            <div className="flex items-center gap-1">
+              {[
+                { label: "О проекте", anchor: "about" },
+                { label: "Технология", anchor: "technology" },
+                { label: "Команда", anchor: "team" },
+                { label: "Контакты", anchor: "contacts" },
+                { label: "Тарифы", anchor: "pricing" },
+              ].map(item => (
+                <button
+                  key={item.anchor}
+                  onClick={() => document.getElementById(item.anchor)?.scrollIntoView({ behavior: "smooth" })}
+                  className="btn-ghost px-3 py-2 rounded-lg text-xs hidden md:flex"
+                >
+                  {item.label}
+                </button>
+              ))}
+              <button onClick={() => onNavigate("dashboard")} className="btn-ghost px-4 py-2 rounded-lg text-xs ml-1">
                 Войти
               </button>
               <button onClick={() => onNavigate("dashboard")} className="btn-electric px-4 py-2 rounded-lg text-xs">
