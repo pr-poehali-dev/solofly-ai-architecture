@@ -74,9 +74,32 @@ function useCountUp(target: number, duration = 1500) {
   return { count, ref };
 }
 
+const DEMO_SLIDES = [
+  {
+    title:   "Командный центр",
+    desc:    "Живые данные всего флота: статус, заряд, высота, активные миссии. Карта с позициями дронов обновляется каждые 3 секунды.",
+    img:     "https://cdn.poehali.dev/projects/5ef72b5b-2023-4dff-b313-89105094219f/files/315b7e81-88e9-48df-94ee-e6630694e903.jpg",
+    tags:    ["Live телеметрия", "GPS карта", "Системные события"],
+  },
+  {
+    title:   "Управление полётом",
+    desc:    "Авиагоризонт, телеметрия 300+ параметров, манёвры одной кнопкой. ИИ объясняет каждое своё решение.",
+    img:     "https://cdn.poehali.dev/projects/5ef72b5b-2023-4dff-b313-89105094219f/files/335ee78c-597e-46a4-ae55-6283bbb2a8da.jpg",
+    tags:    ["Авиагоризонт", "Манёвры", "Объяснимый ИИ"],
+  },
+  {
+    title:   "Миссии и рой БПЛА",
+    desc:    "Конструктор маршрутов прямо на карте. Координация роя, распределение задач, обмен данными между дронами в реальном времени.",
+    img:     "https://cdn.poehali.dev/projects/5ef72b5b-2023-4dff-b313-89105094219f/files/f48f26b4-d901-46fa-86c6-1ce512f59148.jpg",
+    tags:    ["Waypoints на карте", "Рой БПЛА", "ИИ-модели"],
+  },
+];
+
 export default function LandingPage({ onNavigate }: Props) {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [openFaq, setOpenFaq]   = useState<number | null>(null);
   const [showPromo, setShowPromo] = useState(false);
+  const [showDemo, setShowDemo]   = useState(false);
+  const [demoSlide, setDemoSlide] = useState(0);
   const [promoShown, setPromoShown] = useState(false);
 
   // Pop-up через 12 сек для посетителя (мероприятие по привлечению)
@@ -92,6 +115,97 @@ export default function LandingPage({ onNavigate }: Props) {
 
   return (
     <div className="min-h-screen grid-bg">
+
+      {/* ── Демо-модал ── */}
+      {showDemo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(6px)" }}
+          onClick={e => { if (e.target === e.currentTarget) setShowDemo(false); }}>
+          <div className="w-full max-w-3xl panel rounded-2xl overflow-hidden fade-up"
+            style={{ border: "1px solid rgba(0,212,255,0.25)" }}>
+
+            {/* Шапка */}
+            <div className="flex items-center justify-between px-5 py-3"
+              style={{ borderBottom: "1px solid hsl(var(--border))", background: "rgba(0,212,255,0.04)" }}>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full" style={{ background: "var(--signal-green)", boxShadow: "0 0 6px var(--signal-green)" }} />
+                <span className="font-bold text-sm">Демо-режим SoloFly</span>
+                <span className="tag tag-electric" style={{ fontSize: 9 }}>Без регистрации</span>
+              </div>
+              <button onClick={() => setShowDemo(false)} className="btn-ghost p-1.5 rounded-lg">
+                <Icon name="X" size={16} />
+              </button>
+            </div>
+
+            {/* Слайд */}
+            <div className="relative overflow-hidden" style={{ aspectRatio: "16/9" }}>
+              <img
+                key={demoSlide}
+                src={DEMO_SLIDES[demoSlide].img}
+                alt={DEMO_SLIDES[demoSlide].title}
+                className="w-full h-full object-cover fade-up"
+              />
+              {/* Оверлей с описанием */}
+              <div className="absolute inset-0 pointer-events-none"
+                style={{ background: "linear-gradient(to top, rgba(5,9,14,0.92) 0%, transparent 50%)" }} />
+              <div className="absolute bottom-0 left-0 right-0 p-5">
+                <h3 className="font-bold text-lg mb-1">{DEMO_SLIDES[demoSlide].title}</h3>
+                <p className="text-sm text-muted-foreground mb-3 leading-relaxed max-w-lg">
+                  {DEMO_SLIDES[demoSlide].desc}
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  {DEMO_SLIDES[demoSlide].tags.map(t => (
+                    <span key={t} className="tag tag-electric" style={{ fontSize: 9 }}>{t}</span>
+                  ))}
+                </div>
+              </div>
+              {/* Стрелки */}
+              {demoSlide > 0 && (
+                <button
+                  onClick={() => setDemoSlide(s => s - 1)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:opacity-80"
+                  style={{ background: "rgba(5,9,14,0.7)", border: "1px solid rgba(0,212,255,0.3)" }}>
+                  <Icon name="ChevronLeft" size={18} style={{ color: "var(--electric)" }} />
+                </button>
+              )}
+              {demoSlide < DEMO_SLIDES.length - 1 && (
+                <button
+                  onClick={() => setDemoSlide(s => s + 1)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:opacity-80"
+                  style={{ background: "rgba(5,9,14,0.7)", border: "1px solid rgba(0,212,255,0.3)" }}>
+                  <Icon name="ChevronRight" size={18} style={{ color: "var(--electric)" }} />
+                </button>
+              )}
+            </div>
+
+            {/* Точки-переключатели + CTA */}
+            <div className="flex items-center justify-between px-5 py-4">
+              <div className="flex gap-2">
+                {DEMO_SLIDES.map((_, i) => (
+                  <button key={i} onClick={() => setDemoSlide(i)}
+                    className="transition-all rounded-full"
+                    style={{
+                      width: demoSlide === i ? 20 : 8,
+                      height: 8,
+                      background: demoSlide === i ? "var(--electric)" : "rgba(0,212,255,0.25)",
+                    }} />
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setShowDemo(false)}
+                  className="btn-ghost px-4 py-2 rounded-lg text-xs">
+                  Закрыть
+                </button>
+                <button
+                  onClick={() => { setShowDemo(false); onNavigate("dashboard"); }}
+                  className="btn-electric px-5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2">
+                  <Icon name="LogIn" size={13} /> Войти в систему
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Pop-up: мероприятие по привлечению ── */}
       {showPromo && (
@@ -159,8 +273,12 @@ export default function LandingPage({ onNavigate }: Props) {
             className="btn-electric px-8 py-3.5 rounded-lg text-sm font-bold">
             Запустить систему →
           </button>
-          <button className="btn-ghost px-8 py-3.5 rounded-lg text-sm">
-            Смотреть демо полёт
+          <button
+            onClick={() => { setShowDemo(true); setDemoSlide(0); }}
+            className="btn-ghost px-8 py-3.5 rounded-lg text-sm flex items-center gap-2"
+          >
+            <Icon name="Play" size={15} style={{ color: "var(--electric)" }} />
+            Смотреть демо
           </button>
         </div>
 
