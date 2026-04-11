@@ -5,10 +5,11 @@
 import { useEffect, useRef, useCallback } from "react";
 import { STATUS_COLOR, type MapDrone } from "./map/mapUtils";
 import { useMapInteraction } from "./map/useMapInteraction";
-import { drawMapCanvas } from "./map/drawMapCanvas";
+import { drawMapCanvas, type RemoteOperator } from "./map/drawMapCanvas";
 import MapToolbar from "./map/MapToolbar";
 
 export type { MapDrone };
+export type { RemoteOperator };
 
 interface LiveMapProps {
   drones: MapDrone[];
@@ -16,6 +17,7 @@ interface LiveMapProps {
   zoom?: number;
   height?: number;
   operatorPos?: { lat: number; lon: number } | null;
+  remoteOperators?: RemoteOperator[];
   selectedDroneId?: string | null;
   onSelectDrone?: (id: string | null) => void;
   showOperatorGeo?: boolean;
@@ -28,6 +30,7 @@ export default function LiveMap({
   zoom: zoomProp,
   height = 320,
   operatorPos,
+  remoteOperators = [],
   selectedDroneId,
   onSelectDrone,
   showOperatorGeo = false,
@@ -64,6 +67,7 @@ export default function LiveMap({
       zoom: zoomRef.current,
       drones,
       operatorPos,
+      remoteOperators,
       selectedDroneId,
       tick: tickRef.current,
       onTileLoad: draw,
@@ -71,7 +75,7 @@ export default function LiveMap({
 
     tickRef.current++;
     animRef.current = requestAnimationFrame(draw);
-  }, [drones, operatorPos, selectedDroneId, centerRef, zoomRef]);
+  }, [drones, operatorPos, remoteOperators, selectedDroneId, centerRef, zoomRef]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -137,9 +141,18 @@ export default function LiveMap({
           {operatorPos && (
             <div className="flex items-center gap-2 mt-1 pt-1" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
               <div className="w-2.5 h-2.5 rounded-full" style={{ background: "var(--electric)" }} />
-              <span className="hud-label" style={{ fontSize: 9 }}>Оператор</span>
+              <span className="hud-label" style={{ fontSize: 9 }}>Вы</span>
             </div>
           )}
+          {remoteOperators.map(op => (
+            <div key={op.operator_id} className="flex items-center gap-2" style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 2, marginTop: 2 }}>
+              <div className="w-2.5 h-2.5 rounded-sm" style={{
+                background: op.color,
+                clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
+              }} />
+              <span className="hud-label" style={{ fontSize: 9, color: op.color }}>{op.name}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

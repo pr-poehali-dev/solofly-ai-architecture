@@ -1,0 +1,27 @@
+{
+  "tests": [
+    {
+      "name": "GET operators online",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "POST upsert position",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "operator_id": "test-op-1",
+        "name": "Тест Оператор",
+        "lat": 55.751,
+        "lon": 37.618,
+        "page": "dashboard"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

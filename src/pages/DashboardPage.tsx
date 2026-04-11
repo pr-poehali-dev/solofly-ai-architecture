@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import { useLiveFleet } from "@/hooks/useLiveFleet";
 import { useEvents } from "@/hooks/useEvents";
 import LiveMap, { type MapDrone } from "@/components/LiveMap";
+import { useOperatorPresence } from "@/hooks/useOperatorPresence";
 
 const statusMap: Record<string, { label: string; dot: string; cls: string }> = {
   flight:  { label: "В полёте",  dot: "dot-online",  cls: "tag-green"   },
@@ -44,6 +45,15 @@ export default function DashboardPage() {
     );
   };
   const { data: eventsData } = useEvents(8000);
+
+  // Совместная работа операторов
+  const { operators: remoteOperators, total: remoteTotal } = useOperatorPresence({
+    publish:   geoStatus === "ok",
+    myPos:     operatorPos,
+    page:      "dashboard",
+    publishMs: 5000,
+    pollMs:    5000,
+  });
 
   const drones = fleet?.drones ?? [];
   const flying = fleet?.flying ?? 0;
@@ -282,11 +292,19 @@ export default function DashboardPage() {
             />
             {geoStatus === "ok" ? "Геолокация активна" : geoStatus === "denied" ? "Геолокация запрещена" : "Показать моё место"}
           </button>
+          {remoteTotal > 0 && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs"
+              style={{ background: "rgba(0,255,136,0.08)", border: "1px solid rgba(0,255,136,0.2)", color: "var(--signal-green)" }}>
+              <Icon name="Users" size={11} />
+              {remoteTotal} онлайн
+            </div>
+          )}
         </div>
         <LiveMap
           drones={mapDrones}
           height={340}
           operatorPos={operatorPos}
+          remoteOperators={remoteOperators}
           selectedDroneId={selectedDroneId}
           onSelectDrone={setSelectedDroneId}
           showOperatorGeo

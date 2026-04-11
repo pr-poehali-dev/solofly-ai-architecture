@@ -7,6 +7,16 @@ import {
   type MapDrone,
 } from "./mapUtils";
 
+export interface RemoteOperator {
+  operator_id: string;
+  name:        string;
+  color:       string;
+  lat:         number;
+  lon:         number;
+  heading:     number;
+  page:        string;
+}
+
 interface DrawMapCanvasOptions {
   ctx: CanvasRenderingContext2D;
   W: number;
@@ -15,6 +25,7 @@ interface DrawMapCanvasOptions {
   zoom: number;
   drones: MapDrone[];
   operatorPos?: { lat: number; lon: number } | null;
+  remoteOperators?: RemoteOperator[];
   selectedDroneId?: string | null;
   tick: number;
   onTileLoad: () => void;
@@ -27,6 +38,7 @@ export function drawMapCanvas({
   center: cx,
   zoom: z,
   drones,
+  remoteOperators = [],
   operatorPos,
   selectedDroneId,
   tick: t,
@@ -194,6 +206,56 @@ export function drawMapCanvas({
       ctx.font      = "bold 10px monospace";
       ctx.fillStyle = "#00d4ff";
       ctx.fillText("ВЫ", x + 10, y + 4);
+    }
+  }
+
+  // ── Удалённые операторы ──
+  for (const op of remoteOperators) {
+    if (!op.lat || !op.lon) continue;
+    const { x, y } = toPixel(Number(op.lat), Number(op.lon));
+    if (x < -40 || x > W + 40 || y < -40 || y > H + 40) continue;
+
+    const pulse = (Math.sin(t * 0.04) * 0.5 + 0.5);
+
+    // Пульсирующий ореол
+    ctx.beginPath();
+    ctx.arc(x, y, 18 + pulse * 5, 0, Math.PI * 2);
+    ctx.fillStyle = `${op.color}12`;
+    ctx.fill();
+
+    // Точка оператора (бриллиант/ромб — отличие от дрона)
+    ctx.beginPath();
+    ctx.moveTo(x, y - 8);
+    ctx.lineTo(x + 6, y);
+    ctx.lineTo(x, y + 8);
+    ctx.lineTo(x - 6, y);
+    ctx.closePath();
+    ctx.fillStyle   = op.color;
+    ctx.shadowColor = op.color;
+    ctx.shadowBlur  = 10;
+    ctx.fill();
+    ctx.shadowBlur  = 0;
+
+    // Обводка
+    ctx.strokeStyle = "rgba(5,9,14,0.8)";
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+
+    // Имя оператора
+    ctx.font      = "bold 10px monospace";
+    const tw      = ctx.measureText(op.name).width;
+    const lx      = x - tw / 2;
+    const ly      = y + 16;
+    ctx.fillStyle = "rgba(5,9,14,0.85)";
+    ctx.fillRect(lx - 4, ly - 10, tw + 8, 13);
+    ctx.fillStyle = op.color;
+    ctx.fillText(op.name, lx, ly);
+
+    // Страница оператора
+    if (op.page && op.page !== "dashboard") {
+      ctx.font      = "8px monospace";
+      ctx.fillStyle = `${op.color}99`;
+      ctx.fillText(op.page, x - ctx.measureText(op.page).width / 2, ly + 11);
     }
   }
 

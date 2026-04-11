@@ -7,6 +7,7 @@ const URLS = {
   telemetry: "https://functions.poehali.dev/7a62b084-e700-4e06-a220-52002779affc",
   events:    "https://functions.poehali.dev/9aa3b44f-f711-4afb-897f-610623caf2da",
   scanning:  "https://functions.poehali.dev/8f8ffd51-a285-42f6-9148-f178ea5947c4",
+  presence:  "https://functions.poehali.dev/5b06fdf4-7c9d-4b21-838b-0b3498110a8d",
 };
 
 async function req<T>(
@@ -368,4 +369,44 @@ export const events = {
     }),
   explain: (drone_id: string, maneuver: string) =>
     req<ExplainResponse>("events", `/?type=explain&drone_id=${encodeURIComponent(drone_id)}&maneuver=${encodeURIComponent(maneuver)}`),
+};
+
+// ─── Presence (совместная работа операторов) ──────────────────────────────────
+
+export interface OperatorPresence {
+  id:          number;
+  operator_id: string;
+  name:        string;
+  color:       string;
+  lat:         number;
+  lon:         number;
+  heading:     number;
+  page:        string;
+  updated_at:  string;
+}
+
+export interface PresenceResponse {
+  operators: OperatorPresence[];
+  total:     number;
+}
+
+export const presence = {
+  getAll: () =>
+    req<PresenceResponse>("presence", "/"),
+  upsert: (data: {
+    operator_id: string;
+    name:        string;
+    lat:         number;
+    lon:         number;
+    heading?:    number;
+    page?:       string;
+    color?:      string;
+  }) => req<{ ok: boolean; id: number; color: string }>("presence", "/", {
+    method: "POST",
+    body:   JSON.stringify(data),
+  }),
+  remove: (operator_id: string) =>
+    req<{ ok: boolean }>("presence", `/?operator_id=${encodeURIComponent(operator_id)}`, {
+      method: "DELETE",
+    }),
 };
