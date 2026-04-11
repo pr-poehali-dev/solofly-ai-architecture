@@ -1,4 +1,5 @@
-import LandingIndustries from "./LandingIndustries";
+import LandingIndustries  from "./LandingIndustries";
+import LandingOnboarding  from "./LandingOnboarding";
 import LandingAICapitan  from "./LandingAICapitan";
 import LandingAIBank     from "./LandingAIBank";
 import LandingMultiEnv   from "./LandingMultiEnv";
@@ -30,6 +31,8 @@ export default function LandingSocial({ onNavigate }: LandingSocialProps) {
       <LandingCompare />
       {/* Отзывы по отраслям + trust + FAQ */}
       <LandingReviews />
+      {/* Как начать: 3 шага онбординга */}
+      <LandingOnboarding onNavigate={onNavigate} />
       {/* Тарифы */}
       <LandingPricing onNavigate={onNavigate} />
       {/* НИОКР + О проекте + Технология */}
