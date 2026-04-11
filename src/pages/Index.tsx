@@ -18,12 +18,13 @@ import ScanningPage from "./ScanningPage";
 import ScanArchivePage from "./ScanArchivePage";
 import UCPPage from "./UCPPage";
 import ProfilePage from "./ProfilePage";
+import PrivacyPage from "./PrivacyPage";
 
 type Page =
   | "landing" | "dashboard" | "missions" | "flightcontrol"
   | "ai" | "swarm" | "monitoring" | "flightlog"
   | "security" | "api" | "support" | "integrations" | "scanning" | "scanarchive" | "ucp"
-  | "profile";
+  | "profile" | "privacy";
 
 export default function Index() {
   const { user, loading } = useAuth();
@@ -49,6 +50,10 @@ export default function Index() {
 
   // Не авторизован — показываем страницу входа/регистрации
   if (!user) {
+    // Показываем политику по прямой ссылке без авторизации
+    if (new URLSearchParams(window.location.search).get("privacy") === "1") {
+      return <PrivacyPage standalone onClose={() => window.history.back()} />;
+    }
     return <AuthPage onSuccess={() => setPage("dashboard")} />;
   }
 
@@ -70,6 +75,7 @@ export default function Index() {
       case "scanarchive": return <ScanArchivePage />;
       case "ucp":         return <UCPPage />;
       case "profile":     return <ProfilePage />;
+      case "privacy":     return <PrivacyPage />;
       default: return <DashboardPage />;
     }
   };

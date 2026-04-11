@@ -12,18 +12,23 @@ export default function AuthPage({ onSuccess }: AuthPageProps) {
   const [email, setEmail]   = useState("");
   const [password, setPass] = useState("");
   const [name, setName]     = useState("");
+  const [consent, setConsent] = useState(false);
   const [loading, setLoad]  = useState(false);
   const [error, setError]   = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (mode === "register" && !consent) {
+      setError("Необходимо дать согласие на обработку персональных данных");
+      return;
+    }
     setLoad(true);
     try {
       if (mode === "login") {
         await login(email, password);
       } else {
-        await register(email, password, name);
+        await register(email, password, name, true);
       }
       onSuccess();
     } catch (err: unknown) {
@@ -112,6 +117,39 @@ export default function AuthPage({ onSuccess }: AuthPageProps) {
               style={{ background: "hsl(var(--input))", border: "1px solid hsl(var(--border))", color: "hsl(var(--foreground))" }}
             />
           </div>
+
+          {/* Согласие на обработку ПДн — только при регистрации (152-ФЗ) */}
+          {mode === "register" && (
+            <label className="flex items-start gap-3 cursor-pointer">
+              <div className="relative mt-0.5 shrink-0">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={e => setConsent(e.target.checked)}
+                  className="sr-only"
+                />
+                <div className="w-4 h-4 rounded flex items-center justify-center transition-all"
+                  style={{
+                    background: consent ? "var(--electric)" : "hsl(var(--input))",
+                    border: `1px solid ${consent ? "var(--electric)" : "hsl(var(--border))"}`,
+                  }}>
+                  {consent && <Icon name="Check" size={10} style={{ color: "hsl(210 25% 4%)" }} />}
+                </div>
+              </div>
+              <span className="text-xs text-muted-foreground leading-relaxed">
+                Я даю согласие на обработку моих персональных данных в соответствии с{" "}
+                <button
+                  type="button"
+                  onClick={() => window.open("/?privacy=1", "_blank")}
+                  className="underline"
+                  style={{ color: "var(--electric)" }}
+                >
+                  Политикой конфиденциальности
+                </button>
+                {" "}и требованиями Федерального закона №152-ФЗ «О персональных данных»
+              </span>
+            </label>
+          )}
 
           {error && (
             <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs"

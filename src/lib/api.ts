@@ -456,4 +456,9 @@ export const authApi = {
     method: "PATCH",
     body:   JSON.stringify(data),
   }),
+  deleteAccount: (password: string) =>
+    authReq<{ ok: boolean; message: string }>("delete", {
+      method: "POST",
+      body:   JSON.stringify({ password }),
+    }),
 };

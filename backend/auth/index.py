@@ -1,10 +1,11 @@
 """
 Авторизация SoloFly.
-POST /?action=register  — регистрация (email, password, name)
-POST /?action=login     — вход (email, password) → token в Set-Cookie
-POST /?action=logout    — выход (удаляет сессию)
-GET  /?action=me        — данные текущего пользователя по токену
-PATCH /?action=update   — изменить имя, email, пароль, цвет аватара
+POST  /?action=register  — регистрация (email, password, name, consent=true)
+POST  /?action=login     — вход (email, password) → token
+POST  /?action=logout    — выход
+POST  /?action=delete    — удаление аккаунта (152-ФЗ, право на забвение)
+GET   /?action=me        — данные текущего пользователя
+PATCH /?action=update    — изменить имя, email, пароль, цвет аватара
 """
 import os, json, secrets, hashlib
 from datetime import datetime, timezone
@@ -75,6 +76,10 @@ def handler(event: dict, context) -> dict:
             if len(pwd) < 6:
                 return {"statusCode": 400, "headers": CORS,
                         "body": json.dumps({"error": "Пароль минимум 6 символов"})}
+            # 152-ФЗ: регистрация без согласия запрещена
+            if not body.get("consent"):
+                return {"statusCode": 400, "headers": CORS,
+                        "body": json.dumps({"error": "Необходимо согласие на обработку персональных данных"})}
 
             # Проверяем уникальность email
             cur.execute(f"SELECT id FROM {SCHEMA}.users WHERE email = %s", (email,))
@@ -89,13 +94,23 @@ def handler(event: dict, context) -> dict:
 
             pwd_hash = hash_password(pwd)
             cur.execute(
-                f"""INSERT INTO {SCHEMA}.users (email, name, password_hash, avatar_color)
-                    VALUES (%s, %s, %s, %s) RETURNING id, role""",
+                f"""INSERT INTO {SCHEMA}.users
+                    (email, name, password_hash, avatar_color, consent_given, consent_given_at)
+                    VALUES (%s, %s, %s, %s, true, now()) RETURNING id, role""",
                 (email, name or email.split("@")[0], pwd_hash, color)
             )
             row     = cur.fetchone()
             user_id = row["id"]
             role    = row["role"]
+
+            # Логируем согласие (152-ФЗ)
+            ip    = (event.get("requestContext") or {}).get("identity", {}).get("sourceIp")
+            ua    = (event.get("headers") or {}).get("user-agent", "")
+            cur.execute(
+                f"""INSERT INTO {SCHEMA}.consent_log (user_id, action, ip_addr, user_agent)
+                    VALUES (%s, 'given', %s, %s)""",
+                (user_id, ip, ua)
+            )
 
             # Создаём сессию
             token = secrets.token_urlsafe(32)
@@ -267,6 +282,64 @@ def handler(event: dict, context) -> dict:
 
             return {"statusCode": 200, "headers": CORS,
                     "body": json.dumps({"ok": True, "user": updated})}
+
+        # ── POST /?action=delete — удаление аккаунта (152-ФЗ, право на забвение) ──
+        elif method == "POST" and action == "delete":
+            token = get_token(event)
+            if not token:
+                return {"statusCode": 401, "headers": CORS,
+                        "body": json.dumps({"error": "Не авторизован"})}
+
+            cur.execute(f"""
+                SELECT u.id, u.password_hash FROM {SCHEMA}.sessions s
+                JOIN {SCHEMA}.users u ON u.id = s.user_id
+                WHERE s.token = %s AND s.expires_at > now()
+            """, (token,))
+            row = cur.fetchone()
+            if not row:
+                return {"statusCode": 401, "headers": CORS,
+                        "body": json.dumps({"error": "Сессия истекла"})}
+
+            body = json.loads(event.get("body") or "{}")
+            pwd  = body.get("password", "")
+            if not pwd or hash_password(pwd) != row["password_hash"]:
+                return {"statusCode": 403, "headers": CORS,
+                        "body": json.dumps({"error": "Неверный пароль"})}
+
+            user_id = row["id"]
+            ip  = (event.get("requestContext") or {}).get("identity", {}).get("sourceIp")
+            ua  = (event.get("headers") or {}).get("user-agent", "")
+
+            # Логируем отзыв согласия и удаление (152-ФЗ)
+            cur.execute(
+                f"""INSERT INTO {SCHEMA}.consent_log (user_id, action, ip_addr, user_agent)
+                    VALUES (%s, 'account_deleted', %s, %s)""",
+                (user_id, ip, ua)
+            )
+
+            # Анонимизируем данные вместо физического удаления — сохраняем лог согласий
+            anon_email = f"deleted_{user_id}_{secrets.token_hex(4)}@deleted.invalid"
+            cur.execute(f"""
+                UPDATE {SCHEMA}.users SET
+                    email         = %s,
+                    name          = 'Удалённый пользователь',
+                    password_hash = '',
+                    consent_given = false,
+                    last_login    = null
+                WHERE id = %s
+            """, (anon_email, user_id))
+
+            # Удаляем все активные сессии
+            cur.execute(
+                f"UPDATE {SCHEMA}.sessions SET expires_at = now() WHERE user_id = %s",
+                (user_id,)
+            )
+            conn.commit()
+
+            clear_cookie = "sf_token=; Path=/; Max-Age=0; SameSite=Lax; HttpOnly"
+            return {"statusCode": 200,
+                    "headers": {**CORS, "X-Set-Cookie": clear_cookie},
+                    "body": json.dumps({"ok": True, "message": "Аккаунт удалён"})}
 
         # ── POST /?action=logout ──────────────────────────────────────────────
         elif method == "POST" and action == "logout":

@@ -2,11 +2,12 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import { authApi, type User } from "@/lib/api";
 
 interface AuthContextValue {
-  user:       User | null;
-  loading:    boolean;
-  login:      (email: string, password: string) => Promise<void>;
-  register:   (email: string, password: string, name: string) => Promise<void>;
-  logout:     () => Promise<void>;
+  user:          User | null;
+  loading:       boolean;
+  login:         (email: string, password: string) => Promise<void>;
+  register:      (email: string, password: string, name: string, consent: true) => Promise<void>;
+  logout:        () => Promise<void>;
+  deleteAccount: (password: string) => Promise<void>;
   updateUser: (data: {
     name?:             string;
     email?:            string;
@@ -22,7 +23,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser]       = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Восстанавливаем сессию при загрузке
   useEffect(() => {
     const token = localStorage.getItem("sf_token");
     if (!token) { setLoading(false); return; }
@@ -38,8 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
   }, []);
 
-  const register = useCallback(async (email: string, password: string, name: string) => {
-    const res = await authApi.register({ email, password, name });
+  const register = useCallback(async (email: string, password: string, name: string, consent: true) => {
+    const res = await authApi.register({ email, password, name, consent });
     localStorage.setItem("sf_token", res.token);
     setUser(res.user);
   }, []);
@@ -50,13 +50,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const deleteAccount = useCallback(async (password: string) => {
+    await authApi.deleteAccount(password);
+    localStorage.removeItem("sf_token");
+    setUser(null);
+  }, []);
+
   const updateUser = useCallback(async (data: Parameters<AuthContextValue["updateUser"]>[0]) => {
     const res = await authApi.update(data);
     setUser(res.user);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, deleteAccount, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
