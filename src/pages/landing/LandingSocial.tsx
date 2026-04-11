@@ -183,6 +183,82 @@ export default function LandingSocial({ onNavigate }: LandingSocialProps) {
         <p className="text-center text-xs text-muted-foreground mt-6">
           Безопасная оплата через ЮKassa · SSL шифрование · Отмена в любое время
         </p>
+        <div className="mt-5 panel rounded-xl p-4 text-center text-xs text-muted-foreground leading-relaxed max-w-2xl mx-auto"
+          style={{ border: "1px solid rgba(0,212,255,0.12)" }}>
+          Текущая версия платформы является MVP. В рамках НИОКР 2026 года разрабатывается новое поколение автономного алгоритмического ядра с расширенными возможностями адаптации и верифицированными показателями безопасности.
+        </div>
+      </section>
+
+      {/* ── НИОКР ── */}
+      <section id="rnd" className="px-6 py-20 max-w-5xl mx-auto">
+        <div className="text-center mb-12">
+          <div className="tag tag-green mb-4">НИОКР · 2026</div>
+          <h2 className="text-4xl font-bold mb-4">Научно-исследовательские работы</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto text-sm leading-relaxed">
+            В 2026 году ООО «МАТ-Лабс» приступило к выполнению НИОКР по созданию экспериментального образца программного комплекса автономного управления БПЛА нового поколения.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          {[
+            {
+              num: "01",
+              title: "Математическая модель адаптивной маршрутизации",
+              desc: "Разработка формальной модели планирования траектории с учётом динамически изменяющихся ограничений: рельефа, погодных условий, зон ограничения полётов и технического состояния аппарата.",
+              status: "В разработке",
+              color: "var(--electric)",
+            },
+            {
+              num: "02",
+              title: "Алгоритм автономного принятия решений",
+              desc: "Создание алгоритмического ядра, обеспечивающего выбор оптимального действия в нештатных ситуациях без участия оператора. Основа — нейросетевая архитектура с механизмом объяснимости решений.",
+              status: "В разработке",
+              color: "var(--electric)",
+            },
+            {
+              num: "03",
+              title: "Моделирование сценариев потери связи",
+              desc: "Систематизация и формализация сценариев деградации канала управления. Разработка и верификация алгоритмов автономного завершения миссии при полном или частичном отсутствии связи.",
+              status: "Планируется",
+              color: "var(--warning)",
+            },
+            {
+              num: "04",
+              title: "Экспериментальная верификация алгоритмов",
+              desc: "Стендовые испытания и лётные эксперименты на тестовом полигоне. Сбор статистики и валидация соответствия расчётных показателей реальным результатам.",
+              status: "Планируется",
+              color: "var(--warning)",
+            },
+          ].map(item => (
+            <div key={item.num} className="panel rounded-2xl p-6"
+              style={{ border: `1px solid ${item.color}22` }}>
+              <div className="flex items-start gap-4">
+                <span className="text-2xl font-bold shrink-0" style={{ color: item.color }}>{item.num}</span>
+                <div>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <span className="font-bold text-sm">{item.title}</span>
+                    <span className="tag text-xs px-2 py-0.5 rounded-md"
+                      style={{
+                        background: `${item.color}14`,
+                        color: item.color,
+                        border: `1px solid ${item.color}33`,
+                        fontSize: 9,
+                      }}>
+                      {item.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="panel rounded-2xl p-5 text-sm text-muted-foreground leading-relaxed"
+          style={{ border: "1px solid rgba(0,255,136,0.15)", background: "rgba(0,255,136,0.02)" }}>
+          <strong className="text-foreground block mb-1">Цель НИОКР</strong>
+          Создание экспериментального образца программного комплекса, обеспечивающего автономное выполнение полётных миссий БПЛА с минимизацией операторской нагрузки и соответствием требованиям безопасности воздушного пространства РФ.
+        </div>
       </section>
 
       {/* ── О проекте ── */}
@@ -194,10 +270,10 @@ export default function LandingSocial({ onNavigate }: LandingSocialProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
           <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
             <p>
-              <strong className="text-foreground">SoloFly</strong> — программная платформа для автономного управления БПЛА (беспилотными летательными аппаратами), разработанная российской компанией ООО «МАТ-Лабс». Система позволяет эксплуатировать дроны без постоянного участия оператора: планирует маршруты, выполняет полёты, анализирует данные и самообучается после каждой миссии.
+              <strong className="text-foreground">SoloFly</strong> — экспериментальная программная платформа для управления БПЛА (беспилотными летательными аппаратами) с минимизацией операторской нагрузки, разработанная российской компанией ООО «МАТ-Лабс». Система планирует маршруты, выполняет полёты, анализирует телеметрические данные и адаптирует модели принятия решений на основе накопленного опыта.
             </p>
             <p>
-              Платформа создана для профессиональных применений: мониторинг объектов, патрулирование территорий, аэрофотосъёмка, картографирование, инспекция инфраструктуры. Работает с дронами на базе Ardupilot и PX4 через протокол MAVLink.
+              Платформа ориентирована на профессиональные применения: мониторинг объектов, патрулирование территорий, аэрофотосъёмка, картографирование, инспекция инфраструктуры. Работает с дронами на базе Ardupilot и PX4 через протокол MAVLink v2.
             </p>
             <p>
               Проект основан в 2026 году и находится в стадии активной разработки. Платформа запущена в режиме открытого бета-тестирования — первые пользователи уже подключают реальные дроны и тестируют автономные сценарии полётов.

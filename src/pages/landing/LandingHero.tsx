@@ -21,19 +21,19 @@ export default function LandingHero({ onNavigate, onOpenDemo }: LandingHeroProps
 
         <div className="inline-flex items-center gap-2 mb-8 px-4 py-1.5 rounded-full panel-glow text-xs font-semibold tracking-widest uppercase">
           <span className="dot-online" />
-          <span style={{ color: "var(--electric)" }}>Система активна · v2.4.1</span>
+          <span style={{ color: "var(--electric)" }}>Открытое бета-тестирование · v0.9-beta</span>
         </div>
 
         <h1 className="text-6xl md:text-7xl font-bold leading-tight mb-6 tracking-tight">
           <span className="gradient-text">SoloFly</span><br />
           <span className="text-4xl md:text-5xl font-normal" style={{ color: "hsl(var(--muted-foreground))" }}>
-            БПЛА летит. Сам. Всегда.
+            Экспериментальная система автономного управления БПЛА
           </span>
         </h1>
 
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed">
-          Автономная система управления дроном на базе ИИ — планирует маршруты, управляет полётом,
-          анализирует среду и самообучается после каждой миссии. Без оператора.
+          Разработка алгоритмов адаптивной навигации и автономного принятия решений для промышленного применения.
+          Платформа построена на базе открытых стандартов MAVLink, Ardupilot и PX4.
         </p>
 
         <div className="flex items-center justify-center gap-4 mb-16 flex-wrap">
@@ -157,12 +157,12 @@ export default function LandingHero({ onNavigate, onOpenDemo }: LandingHeroProps
       {/* ── Возможности ── */}
       <section className="px-6 py-20 max-w-6xl mx-auto">
         <div className="text-center mb-14">
-          <div className="tag tag-electric mb-4">Возможности системы</div>
+          <div className="tag tag-electric mb-4">Технические направления</div>
           <h2 className="text-4xl font-bold mb-4">
-            Полная автономность —<br /><span className="gradient-text">не маркетинг, а факт</span>
+            Ключевые компоненты<br /><span className="gradient-text">разрабатываемой системы</span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            SoloFly принимает все решения самостоятельно. От взлёта до посадки.
+            Каждое направление является самостоятельной исследовательской задачей в рамках НИОКР 2026 года.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -183,13 +183,13 @@ export default function LandingHero({ onNavigate, onOpenDemo }: LandingHeroProps
         <div className="panel-glow rounded-2xl p-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
             <div>
-              <div className="tag tag-green mb-4">Самообучение</div>
-              <h2 className="text-3xl font-bold mb-4">Каждый полёт делает систему умнее</h2>
+              <div className="tag tag-green mb-4">Адаптивное дообучение</div>
+              <h2 className="text-3xl font-bold mb-4">Накопление данных — основа улучшений</h2>
               <p className="text-muted-foreground leading-relaxed mb-6">
-                После завершения миссии бортовой ИИ анализирует принятые решения, сравнивает с оптимальными траекториями и обновляет нейронную сеть. Без разметчиков, без датасетов, без инженеров.
+                Система использует механизм контролируемого адаптивного дообучения на основе накопленных телеметрических данных с последующей валидацией модели. Обновление применяется только при прохождении автоматических контрольных порогов качества.
               </p>
               <div className="space-y-3">
-                {["Обнаружение паттернов в новых средах", "Улучшение точности при повторных миссиях", "Адаптация к погодным условиям", "Оптимизация расхода заряда АКБ"].map((f) => (
+                {["Обнаружение паттернов в новых условиях полёта", "Повышение точности при повторных миссиях", "Адаптация к изменяющимся погодным условиям", "Оптимизация расхода энергии по накопленным данным"].map((f) => (
                   <div key={f} className="flex items-center gap-3 text-sm">
                     <Icon name="CheckCircle" size={15} style={{ color: "var(--signal-green)" }} className="shrink-0" />
                     {f}

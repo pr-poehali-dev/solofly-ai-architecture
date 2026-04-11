@@ -87,6 +87,7 @@ export default function Layout({ currentPage, onNavigate, children, isLanding }:
             <div className="flex items-center gap-1">
               {[
                 { label: "О проекте", anchor: "about" },
+                { label: "НИОКР", anchor: "rnd" },
                 { label: "Технология", anchor: "technology" },
                 { label: "Команда", anchor: "team" },
                 { label: "Контакты", anchor: "contacts" },
