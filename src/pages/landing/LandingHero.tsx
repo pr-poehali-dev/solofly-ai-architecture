@@ -42,6 +42,18 @@ export default function LandingHero({ onNavigate, onOpenDemo }: LandingHeroProps
             Запустить систему →
           </button>
           <button
+            onClick={() => onNavigate("dronebuilder")}
+            className="px-8 py-3.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-all hover:scale-[1.03]"
+            style={{
+              background: "rgba(0,212,255,0.08)",
+              border: "1px solid rgba(0,212,255,0.35)",
+              color: "var(--electric)",
+            }}
+          >
+            <Icon name="Wrench" size={15} />
+            Конструктор БПЛА
+          </button>
+          <button
             onClick={onOpenDemo}
             className="btn-ghost px-8 py-3.5 rounded-lg text-sm flex items-center gap-2"
           >
@@ -101,6 +113,44 @@ export default function LandingHero({ onNavigate, onOpenDemo }: LandingHeroProps
             <div className="hud-value text-4xl font-bold gradient-text mb-2">{(accuracyCount / 10).toFixed(1)}%</div>
             <div className="hud-label">Точность ИИ</div>
           </div>
+        </div>
+      </section>
+
+      {/* ── Конструктор БПЛА ── */}
+      <section className="px-6 pb-4 max-w-5xl mx-auto">
+        <div
+          className="rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 cursor-pointer hover:scale-[1.01] transition-all"
+          style={{
+            background: "linear-gradient(135deg, rgba(0,212,255,0.07) 0%, rgba(0,255,136,0.05) 100%)",
+            border: "1px solid rgba(0,212,255,0.25)",
+          }}
+          onClick={() => onNavigate("dronebuilder")}
+        >
+          <div className="flex items-center gap-5">
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: "rgba(0,212,255,0.12)", border: "1px solid rgba(0,212,255,0.2)" }}>
+              <Icon name="Wrench" size={26} style={{ color: "var(--electric)" }} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-bold text-lg">Конструктор БПЛА</span>
+                <span className="tag tag-green" style={{ fontSize: 10 }}>Бесплатно</span>
+              </div>
+              <p className="text-muted-foreground text-sm">
+                Руководства по сборке, выбор компонентов, настройка Ardupilot/PX4, техобслуживание и законодательство РФ — без регистрации
+              </p>
+            </div>
+          </div>
+          <button
+            className="shrink-0 px-6 py-3 rounded-xl text-sm font-bold flex items-center gap-2 whitespace-nowrap"
+            style={{
+              background: "rgba(0,212,255,0.12)",
+              border: "1px solid rgba(0,212,255,0.3)",
+              color: "var(--electric)",
+            }}
+          >
+            Открыть <Icon name="ChevronRight" size={16} />
+          </button>
         </div>
       </section>
 
