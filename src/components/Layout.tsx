@@ -84,6 +84,12 @@ export default function Layout({ currentPage, onNavigate, children, isLanding }:
               <span className="font-bold text-base tracking-tight">Solo<span className="gradient-text">Fly</span></span>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
+                className="btn-ghost px-4 py-2 rounded-lg text-xs items-center gap-1.5 hidden sm:flex"
+              >
+                <Icon name="CreditCard" size={12} /> Тарифы
+              </button>
               <button onClick={() => onNavigate("dashboard")} className="btn-ghost px-4 py-2 rounded-lg text-xs">
                 Войти
               </button>
