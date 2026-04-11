@@ -110,7 +110,7 @@ export default function Index() {
   const renderPage = () => {
     switch (page) {
       case "landing":       return <LandingPage onNavigate={navigate} />;
-      case "dashboard":     return <DashboardPage />;
+      case "dashboard":     return <DashboardPage onNavigate={navigate} />;
       case "missions":      return <MissionsPage />;
       case "flightcontrol": return <FlightControlPage />;
       case "ai":            return <AIPage />;

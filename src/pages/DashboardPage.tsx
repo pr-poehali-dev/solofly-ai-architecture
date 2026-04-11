@@ -6,6 +6,16 @@ import LiveMap, { type MapDrone } from "@/components/LiveMap";
 import { useOperatorPresence } from "@/hooks/useOperatorPresence";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+// Быстрые ссылки конструктора для виджета на главной
+const BUILDER_QUICK = [
+  { icon: "Box",          label: "Рамы",              cat: "frames"  },
+  { icon: "Zap",          label: "Моторы",             cat: "motors"  },
+  { icon: "Cpu",          label: "Полётный контроллер",cat: "fc"      },
+  { icon: "Battery",      label: "АКБ и питание",      cat: "power"   },
+  { icon: "Crosshair",    label: "Сенсоры",            cat: "sensors" },
+  { icon: "Wrench",       label: "Техобслуживание",    cat: "maintenance" },
+] as const;
+
 const statusMap: Record<string, { label: string; dot: string; cls: string }> = {
   flight:  { label: "В полёте",  dot: "dot-online",  cls: "tag-green"   },
   standby: { label: "Готов",     dot: "dot-online",  cls: "tag-electric" },
@@ -30,7 +40,7 @@ function relTime(ts: string) {
   return `${Math.floor(diff / 60)} ч назад`;
 }
 
-export default function DashboardPage() {
+export default function DashboardPage({ onNavigate }: { onNavigate?: (page: string) => void } = {}) {
   const { data: fleet, loading: fleetLoading, error: fleetErr } = useLiveFleet(3000);
   const [selectedDroneId, setSelectedDroneId] = useState<string | null>(null);
   const [operatorPos, setOperatorPos] = useState<{ lat: number; lon: number } | null>(null);
@@ -296,6 +306,58 @@ export default function DashboardPage() {
               }
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Виджет: Конструктор БПЛА */}
+      <div className="panel rounded-xl overflow-hidden"
+        style={{ border: "1px solid rgba(0,212,255,0.12)" }}>
+        <div className="flex items-center justify-between px-5 py-3"
+          style={{ borderBottom: "1px solid hsl(var(--border))" }}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+              style={{ background: "rgba(0,212,255,0.1)" }}>
+              <Icon name="Wrench" size={14} style={{ color: "var(--electric)" }} />
+            </div>
+            <div>
+              <span className="font-semibold text-sm">Конструктор БПЛА</span>
+              <span className="hud-label ml-2">Руководства по сборке и обслуживанию</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="tag tag-green" style={{ fontSize: 9 }}>Бесплатно</span>
+            <button
+              onClick={() => onNavigate?.("dronebuilder")}
+              className="btn-ghost px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5"
+            >
+              Открыть <Icon name="ChevronRight" size={12} />
+            </button>
+          </div>
+        </div>
+
+        <div className={`grid gap-3 p-4 ${isMobile ? "grid-cols-2" : "grid-cols-3 lg:grid-cols-6"}`}>
+          {BUILDER_QUICK.map(item => (
+            <button
+              key={item.cat}
+              onClick={() => onNavigate?.("dronebuilder")}
+              className="flex flex-col items-start gap-2 p-3 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+              style={{ background: "hsl(var(--input))", border: "1px solid hsl(var(--border))" }}
+            >
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                style={{ background: "rgba(0,212,255,0.08)" }}>
+                <Icon name={item.icon} fallback="BookOpen" size={14} style={{ color: "var(--electric)" }} />
+              </div>
+              <span className="text-xs font-medium leading-tight">{item.label}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="px-5 py-3 flex items-center gap-2"
+          style={{ borderTop: "1px solid hsl(var(--border))", background: "rgba(0,212,255,0.02)" }}>
+          <Icon name="BookOpen" size={12} style={{ color: "hsl(var(--muted-foreground))" }} />
+          <span className="text-xs text-muted-foreground">
+            15 статей · выбор компонентов, настройка Ardupilot/PX4, MAVLink, ТО и законодательство РФ
+          </span>
         </div>
       </div>
 
