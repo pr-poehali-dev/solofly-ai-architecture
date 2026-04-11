@@ -60,6 +60,12 @@ export interface Drone {
   total_hours?: number;
   total_km?: number;
   last_seen_at?: string;
+  // Поля реального дрона (MAVLink)
+  drone_token?: string;
+  hw_serial?: string;
+  last_seen?: string;
+  flight_mode?: string;
+  is_real?: boolean; // true = реальный дрон онлайн
   current_mission?: {
     code: string; name: string; type: string; status: string; progress: number;
   } | null;

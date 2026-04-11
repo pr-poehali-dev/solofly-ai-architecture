@@ -111,6 +111,7 @@ export function drawMapCanvas({
     const color      = STATUS_COLOR[drone.status] ?? "#64748b";
     const isSelected = drone.id === selectedDroneId;
     const flying     = drone.status === "flight";
+    const isReal     = drone.is_real === true;
 
     if (flying) {
       const pulse = (Math.sin(t * 0.06 + drones.indexOf(drone)) * 0.5 + 0.5);
@@ -119,6 +120,17 @@ export function drawMapCanvas({
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(${color === "#00ff88" ? "0,255,136" : "0,212,255"},${0.06 + pulse * 0.04})`;
       ctx.fill();
+    }
+
+    // Реальный дрон — внешнее пульсирующее кольцо
+    if (isReal) {
+      const pulse2 = (Math.sin(t * 0.08 + drones.indexOf(drone) * 0.5) * 0.5 + 0.5);
+      const rr     = 22 + pulse2 * 10;
+      ctx.beginPath();
+      ctx.arc(x, y, rr, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(0,255,136,${0.4 + pulse2 * 0.3})`;
+      ctx.lineWidth   = 1.5;
+      ctx.stroke();
     }
 
     if (flying && drone.heading != null) {
@@ -161,16 +173,24 @@ export function drawMapCanvas({
 
     const label     = drone.name;
     const altStr    = flying ? ` ${drone.altitude.toFixed(0)}м` : "";
-    const fullLabel = label + altStr;
+    const modeStr   = isReal && drone.flight_mode ? ` [${drone.flight_mode}]` : "";
+    const fullLabel = label + altStr + modeStr;
     ctx.font        = isSelected ? "bold 11px monospace" : "10px monospace";
     const tw        = ctx.measureText(fullLabel).width;
     const lx        = x - tw / 2;
     const ly        = y + sz + 16;
 
-    ctx.fillStyle = "rgba(5,9,14,0.8)";
-    ctx.fillRect(lx - 4, ly - 11, tw + 8, 15);
+    ctx.fillStyle = "rgba(5,9,14,0.85)";
+    ctx.fillRect(lx - 4, ly - 11, tw + 8, isReal ? 27 : 15);
     ctx.fillStyle = color;
     ctx.fillText(fullLabel, lx, ly);
+
+    // Бейдж LIVE для реального дрона
+    if (isReal) {
+      ctx.font      = "bold 8px monospace";
+      ctx.fillStyle = "#00ff88";
+      ctx.fillText("● LIVE", lx, ly + 12);
+    }
 
     if (flying && drone.battery != null) {
       const bw  = 28;

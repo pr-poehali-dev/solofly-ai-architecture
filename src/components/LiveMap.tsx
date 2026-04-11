@@ -138,6 +138,12 @@ export default function LiveMap({
               <span className="hud-label" style={{ fontSize: 9 }}>{l}</span>
             </div>
           ))}
+          {drones.some(d => d.is_real) && (
+            <div className="flex items-center gap-2 mt-1 pt-1" style={{ borderTop: "1px solid rgba(0,255,136,0.2)" }}>
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#00ff88", boxShadow: "0 0 4px #00ff88" }} />
+              <span className="hud-label" style={{ fontSize: 9, color: "#00ff88" }}>● LIVE MAVLink</span>
+            </div>
+          )}
           {operatorPos && (
             <div className="flex items-center gap-2 mt-1 pt-1" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
               <div className="w-2.5 h-2.5 rounded-full" style={{ background: "var(--electric)" }} />

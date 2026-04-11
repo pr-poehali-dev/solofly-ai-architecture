@@ -66,6 +66,8 @@ export default function DashboardPage() {
   const minBattery     = useMemo(() => flyingDrones.length ? Math.min(...flyingDrones.map(d => d.battery)) : null, [flyingDrones]);
   const minBattDrone   = useMemo(() => flyingDrones.length ? flyingDrones.reduce((m, d) => d.battery < m.battery ? d : m, flyingDrones[0]) : null, [flyingDrones]);
 
+  const realDronesCount = useMemo(() => drones.filter(d => d.is_real).length, [drones]);
+
   const mapDrones = useMemo<MapDrone[]>(() =>
     drones
       .filter(d => Number(d.lat) && Number(d.lon))
@@ -74,6 +76,9 @@ export default function DashboardPage() {
         lat: Number(d.lat), lon: Number(d.lon),
         altitude: Number(d.altitude), heading: Number(d.heading),
         speed: Number(d.speed), battery: d.battery,
+        is_real: d.is_real,
+        flight_mode: d.flight_mode,
+        gps_sats: d.gps_sats,
       })),
     [drones]
   );
@@ -110,7 +115,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {[
           {
             icon: "Navigation", label: "В полёте",
@@ -135,6 +140,12 @@ export default function DashboardPage() {
             val: minBattery !== null ? `${minBattery}%` : "—",
             color: minBattery !== null && minBattery < 30 ? "var(--danger)" : "var(--warning)",
             sub: minBattDrone?.id ?? "нет полётов",
+          },
+          {
+            icon: "Wifi", label: "Реальных дронов",
+            val: realDronesCount > 0 ? String(realDronesCount) : "—",
+            color: realDronesCount > 0 ? "var(--signal-green)" : "var(--muted-foreground)",
+            sub: realDronesCount > 0 ? "MAVLink онлайн" : "только симуляция",
           },
         ].map((s) => (
           <div key={s.label} className="panel p-5 rounded-xl">
@@ -167,23 +178,42 @@ export default function DashboardPage() {
                   const sm = statusMap[d.status] ?? statusMap.offline;
                   const missionName = d.current_mission?.name ?? (d.status === "charging" ? "Зарядка" : "Ожидает задания");
                   return (
-                    <div key={d.id} className="p-4 rounded-xl" style={{ background: "hsl(var(--input))" }}>
+                    <div key={d.id} className="p-4 rounded-xl transition-all"
+                      style={{
+                        background: "hsl(var(--input))",
+                        border: d.is_real ? "1px solid rgba(0,255,136,0.25)" : "1px solid transparent",
+                      }}>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <span className={sm.dot} />
                           <div>
                             <span className="font-semibold text-sm">{d.name}</span>
                             <span className="hud-label ml-2">{d.id}</span>
+                            {d.is_real && (
+                              <span className="ml-2 tag tag-green" style={{ fontSize: 8, padding: "1px 5px" }}>
+                                ● LIVE
+                              </span>
+                            )}
                           </div>
                         </div>
-                        <span className={`tag ${sm.cls}`}>{sm.label}</span>
+                        <div className="flex items-center gap-1.5">
+                          {d.flight_mode && d.is_real && (
+                            <span className="hud-label px-1.5 py-0.5 rounded" style={{ background: "rgba(0,212,255,0.1)", color: "var(--electric)", fontSize: 9 }}>
+                              {d.flight_mode}
+                            </span>
+                          )}
+                          <span className={`tag ${sm.cls}`}>{sm.label}</span>
+                        </div>
                       </div>
                       <div className="grid grid-cols-4 gap-3 text-center">
                         {[
                           { label: "Заряд",    val: `${d.battery}%` },
                           { label: "Высота",   val: `${Number(d.altitude).toFixed(0)}м` },
                           { label: "Скорость", val: `${Number(d.speed).toFixed(0)}км/ч` },
-                          { label: "Миссия",   val: missionName.length > 14 ? missionName.slice(0,14)+"…" : missionName },
+                          { label: d.is_real ? "GPS сат." : "Миссия",
+                            val: d.is_real
+                              ? `${d.gps_sats ?? "—"} сат`
+                              : (missionName.length > 14 ? missionName.slice(0,14)+"…" : missionName) },
                         ].map((info) => (
                           <div key={info.label}>
                             <div className="hud-label mb-0.5">{info.label}</div>

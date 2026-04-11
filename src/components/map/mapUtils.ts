@@ -10,6 +10,9 @@ export interface MapDrone {
   heading: number;
   speed: number;
   battery?: number;
+  is_real?: boolean;    // реальный MAVLink дрон
+  flight_mode?: string; // режим полёта (LOITER, AUTO, RTL…)
+  gps_sats?: number;
 }
 
 export const STATUS_COLOR: Record<string, string> = {
