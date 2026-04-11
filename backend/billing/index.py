@@ -109,7 +109,11 @@ def handler(event: dict, context) -> dict:
                 JOIN {SCHEMA}.plans p ON p.id = u.plan_id
                 WHERE u.id = %s
             """, (user_id,))
-            plan = dict(cur.fetchone())
+            plan_row = cur.fetchone()
+            if not plan_row:
+                return {"statusCode": 404, "headers": CORS,
+                        "body": json.dumps({"error": "Тариф не найден"})}
+            plan = dict(plan_row)
 
             # Текущее использование
             cur.execute(f"SELECT COUNT(*) as cnt FROM {SCHEMA}.drones")
@@ -145,22 +149,25 @@ def handler(event: dict, context) -> dict:
                 return {"statusCode": 400, "headers": CORS,
                         "body": json.dumps({"error": "Неверный тарифный план"})}
 
-            # Рассчитываем expires_at
+            # Рассчитываем expires_at безопасным способом
             if plan_id == "free":
-                expires_sql = "NULL"
+                cur.execute(
+                    f"UPDATE {SCHEMA}.users SET plan_id=%s, plan_billing=%s, plan_expires_at=NULL WHERE id=%s",
+                    (plan_id, billing, user_id)
+                )
                 expires_arg = None
             else:
-                interval = "1 year" if billing == "year" else "1 month"
-                cur.execute(f"SELECT now() + interval '{interval}' AS exp")
-                expires_arg = cur.fetchone()["exp"].isoformat()
-                expires_sql = "%s"
-
-            cur.execute(
-                f"""UPDATE {SCHEMA}.users
-                    SET plan_id = %s, plan_billing = %s, plan_expires_at = {expires_sql}
-                    WHERE id = %s""",
-                ([plan_id, billing, expires_arg, user_id] if expires_arg else [plan_id, billing, user_id])
-            )
+                months = 12 if billing == "year" else 1
+                cur.execute(
+                    f"""UPDATE {SCHEMA}.users
+                        SET plan_id=%s, plan_billing=%s,
+                            plan_expires_at = now() + (%s * interval '1 month')
+                        WHERE id=%s""",
+                    (plan_id, billing, months, user_id)
+                )
+                cur.execute("SELECT now() + (%s * interval '1 month') AS exp", (months,))
+                expires_row = cur.fetchone()
+                expires_arg = expires_row["exp"].isoformat() if expires_row else None
             conn.commit()
 
             return {"statusCode": 200, "headers": CORS,

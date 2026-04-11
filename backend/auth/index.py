@@ -7,7 +7,7 @@ POST  /?action=delete    — удаление аккаунта (152-ФЗ, пра
 GET   /?action=me        — данные текущего пользователя
 PATCH /?action=update    — изменить имя, email, пароль, цвет аватара
 """
-import os, json, secrets, hashlib
+import os, json, secrets, hashlib, re
 from datetime import datetime, timezone
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -73,6 +73,9 @@ def handler(event: dict, context) -> dict:
             if not email or not pwd:
                 return {"statusCode": 400, "headers": CORS,
                         "body": json.dumps({"error": "email и password обязательны"})}
+            if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+                return {"statusCode": 400, "headers": CORS,
+                        "body": json.dumps({"error": "Некорректный email"})}
             if len(pwd) < 6:
                 return {"statusCode": 400, "headers": CORS,
                         "body": json.dumps({"error": "Пароль минимум 6 символов"})}

@@ -94,10 +94,15 @@ def handler(event: dict, context) -> dict:
                     cur.execute(
                         f"""UPDATE {SCHEMA}.drones
                             SET battery=%s, altitude=%s, speed=%s, heading=%s,
-                                lat=%s, lon=%s, updated_at=now()
+                                lat=%s, lon=%s,
+                                gps_sats=%s, wind=%s, temperature=%s, vibration=%s,
+                                updated_at=now()
                             WHERE id=%s""",
                         (tel["battery"], tel["altitude"], tel["speed"],
-                         tel["heading"], tel["lat"], tel["lon"], tel["drone_id"])
+                         tel["heading"], tel["lat"], tel["lon"],
+                         tel.get("gps_sats", 14), tel.get("wind", 0),
+                         tel.get("temperature", 20), tel.get("vibration", "норма"),
+                         tel["drone_id"])
                     )
                     inserted += 1
             conn.commit()

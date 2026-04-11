@@ -47,6 +47,8 @@ export function useLiveFleet(intervalMs = 3000) {
 
   useEffect(() => {
     refresh();
+    // intervalMs=0 — одноразовый запрос (для страниц без live-обновлений)
+    if (intervalMs <= 0) return;
     const timer = setInterval(refresh, intervalMs);
     return () => clearInterval(timer);
   }, [refresh, intervalMs]);
