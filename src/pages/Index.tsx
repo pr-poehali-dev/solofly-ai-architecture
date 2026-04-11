@@ -8,6 +8,7 @@ import DashboardPage from "./DashboardPage";
 import MissionsPage from "./MissionsPage";
 import FlightControlPage from "./FlightControlPage";
 import AIPage from "./AIPage";
+import VisionPage from "./VisionPage";
 import SwarmPage from "./SwarmPage";
 import MonitoringPage from "./MonitoringPage";
 import FlightLogPage from "./FlightLogPage";
@@ -25,7 +26,7 @@ import DroneBuilderPage from "./DroneBuilderPage";
 
 type Page =
   | "landing" | "auth" | "dashboard" | "missions" | "flightcontrol"
-  | "ai" | "swarm" | "monitoring" | "flightlog"
+  | "ai" | "vision" | "swarm" | "monitoring" | "flightlog"
   | "security" | "api" | "support" | "integrations" | "scanning" | "scanarchive" | "ucp"
   | "profile" | "privacy" | "droneconnect" | "dronebuilder";
 
@@ -114,7 +115,8 @@ export default function Index() {
       case "dashboard":     return <DashboardPage onNavigate={navigate} />;
       case "missions":      return <MissionsPage />;
       case "flightcontrol": return <FlightControlPage />;
-      case "ai":            return <AIPage />;
+      case "ai":            return <AIPage onNavigate={navigate} />;
+      case "vision":        return <VisionPage />;
       case "swarm":         return <SwarmPage />;
       case "monitoring":    return <MonitoringPage />;
       case "flightlog":     return <FlightLogPage />;

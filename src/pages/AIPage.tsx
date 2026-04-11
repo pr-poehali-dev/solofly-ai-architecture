@@ -38,7 +38,7 @@ function relTime(iso: string) {
 
 type TabType = "models" | "explain";
 
-export default function AIPage() {
+export default function AIPage({ onNavigate }: { onNavigate?: (p: string) => void } = {}) {
   const [tab, setTab] = useState<TabType>("models");
   const [explainManeuver, setExplainManeuver] = useState("hover");
   const { data: fleet } = useLiveFleet(0);
@@ -93,9 +93,12 @@ export default function AIPage() {
           <h1 className="text-xl font-bold">ИИ-ядро SoloFly</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Компьютерное зрение · Решения · Самообучение · Трансфер из симуляции</p>
         </div>
-        <button className="btn-ghost px-4 py-2 rounded-lg text-xs flex items-center gap-2">
-          <Icon name="FileDown" size={13} />
-          Экспорт отчёта
+        <button
+          onClick={() => onNavigate?.("vision")}
+          className="btn-electric px-4 py-2 rounded-lg text-xs flex items-center gap-2"
+        >
+          <Icon name="ScanSearch" size={13} />
+          Детекция объектов
         </button>
       </div>
 
