@@ -70,14 +70,15 @@ export default function Index() {
     if (new URLSearchParams(window.location.search).get("privacy") === "1") {
       return <PrivacyPage standalone onClose={() => window.history.back()} />;
     }
-    if (page === "landing" || page === "privacy") {
+    const publicPages = ["landing", "privacy", "dronebuilder"];
+    if (publicPages.includes(page)) {
       const publicNavigate = (p: string) => {
-        if (p === "landing" || p === "privacy") setPage(p as Page);
+        if (publicPages.includes(p)) setPage(p as Page);
         else setPage("auth" as Page);
       };
       return (
-        <Layout currentPage={page} onNavigate={publicNavigate} isLanding>
-          {page === "privacy" ? <PrivacyPage /> : <LandingPage onNavigate={publicNavigate} />}
+        <Layout currentPage={page} onNavigate={publicNavigate} isLanding={page === "landing"}>
+          {page === "privacy" ? <PrivacyPage /> : page === "dronebuilder" ? <DroneBuilderPage /> : <LandingPage onNavigate={publicNavigate} />}
         </Layout>
       );
     }
