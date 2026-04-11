@@ -356,7 +356,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
           style={{ borderTop: "1px solid hsl(var(--border))", background: "rgba(0,212,255,0.02)" }}>
           <Icon name="BookOpen" size={12} style={{ color: "hsl(var(--muted-foreground))" }} />
           <span className="text-xs text-muted-foreground">
-            15 статей · выбор компонентов, настройка Ardupilot/PX4, MAVLink, ТО и законодательство РФ
+            30+ статей · выбор компонентов, настройка Ardupilot/PX4, MAVLink, ТО и законодательство РФ
           </span>
         </div>
       </div>

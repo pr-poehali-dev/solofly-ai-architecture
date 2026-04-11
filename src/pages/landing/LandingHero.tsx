@@ -137,7 +137,7 @@ export default function LandingHero({ onNavigate, onOpenDemo }: LandingHeroProps
                 <span className="tag tag-green" style={{ fontSize: 10 }}>Бесплатно</span>
               </div>
               <p className="text-muted-foreground text-sm">
-                Руководства по сборке, выбор компонентов, настройка Ardupilot/PX4, техобслуживание и законодательство РФ — без регистрации
+                30+ статей по сборке, выбор компонентов, настройка Ardupilot/PX4, техобслуживание и законодательство РФ — без регистрации
               </p>
             </div>
           </div>
