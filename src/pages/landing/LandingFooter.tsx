@@ -7,86 +7,61 @@ interface LandingFooterProps {
 export default function LandingFooter({ onNavigate }: LandingFooterProps) {
   return (
     <>
-      {/* ── Final CTA ── */}
+      {/* ── ФИНАЛЬНЫЙ CTA ── */}
       <section className="px-6 py-24 max-w-5xl mx-auto">
-        <div className="relative rounded-3xl overflow-hidden p-12 text-center"
+        <div className="relative rounded-3xl p-12 text-center overflow-hidden"
           style={{
-            background: "linear-gradient(135deg, rgba(0,212,255,0.08) 0%, rgba(0,255,136,0.04) 50%, rgba(0,212,255,0.06) 100%)",
+            background: "linear-gradient(135deg, rgba(0,212,255,0.08) 0%, rgba(0,255,136,0.05) 60%, rgba(0,212,255,0.04) 100%)",
             border: "1px solid rgba(0,212,255,0.2)",
+            boxShadow: "0 0 80px rgba(0,212,255,0.06)",
           }}>
-          {/* Background glow */}
           <div style={{
-            position: "absolute", top: "-50%", left: "50%", transform: "translateX(-50%)",
-            width: "60%", height: "200%",
-            background: "radial-gradient(ellipse, rgba(0,212,255,0.08) 0%, transparent 70%)",
-            pointerEvents: "none",
+            position: "absolute", inset: 0, pointerEvents: "none",
+            background: "radial-gradient(ellipse 60% 60% at 50% 0%, rgba(0,212,255,0.1) 0%, transparent 70%)",
           }} />
-          {/* Grid */}
-          <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.04, pointerEvents: "none" }}>
-            <defs>
-              <pattern id="cta-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0,212,255,1)" strokeWidth="0.5"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#cta-grid)" />
-          </svg>
-
           <div className="relative">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold mb-6"
-              style={{
-                background: "rgba(0,255,136,0.1)",
-                border: "1px solid rgba(0,255,136,0.25)",
-                color: "var(--signal-green)",
-              }}>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase mb-6"
+              style={{ background: "rgba(0,255,136,0.1)", border: "1px solid rgba(0,255,136,0.25)", color: "var(--signal-green)" }}>
               <span className="dot-online" />
-              Бесплатная регистрация — без карты
+              Доступно прямо сейчас
             </div>
-
-            <h2 className="text-4xl md:text-5xl font-bold mb-5 leading-tight">
-              Готовы к первому<br />
+            <h2 className="font-black mb-4"
+              style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", lineHeight: 1.1, letterSpacing: "-0.03em" }}>
+              Готовы к первому{" "}
               <span className="gradient-text">автономному полёту?</span>
             </h2>
-
-            <p className="text-muted-foreground mb-10 max-w-xl mx-auto leading-relaxed">
-              Зарегистрируйтесь за 30 секунд. Полный доступ к командному центру, управлению полётом, ИИ-ядру и рою БПЛА — сразу после регистрации.
+            <p className="text-lg mb-10 max-w-xl mx-auto leading-relaxed"
+              style={{ color: "hsl(var(--muted-foreground))" }}>
+              Зарегистрируйтесь за 30 секунд. Командный центр, ИИ-ядро, управление роем БПЛА — всё сразу. Карта не нужна.
             </p>
-
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                onClick={() => onNavigate("dashboard")}
-                className="px-10 py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.03]"
-                style={{
-                  background: "var(--electric)",
-                  color: "hsl(210 25% 4%)",
-                  boxShadow: "0 0 30px rgba(0,212,255,0.3)",
-                }}
-              >
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
+              <button onClick={() => onNavigate("dashboard")}
+                className="btn-electric px-10 py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
+                style={{ boxShadow: "0 0 30px rgba(0,212,255,0.3)" }}>
                 <Icon name="Rocket" size={16} />
-                Начать бесплатно →
+                Начать бесплатно
               </button>
-              <button
-                onClick={() => onNavigate("dronebuilder")}
-                className="px-8 py-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:opacity-80"
+              <a href="/?privacy=1" target="_blank" rel="noopener noreferrer"
+                className="px-8 py-4 rounded-xl text-sm flex items-center justify-center gap-2 transition-all hover:opacity-80"
                 style={{
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                }}
-              >
-                <Icon name="Wrench" size={15} />
-                Конструктор БПЛА
-              </button>
+                  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
+                  color: "hsl(var(--muted-foreground))",
+                }}>
+                <Icon name="Shield" size={14} />
+                Политика конфиденциальности
+              </a>
             </div>
-
-            <div className="flex items-center justify-center gap-6 mt-8 flex-wrap">
+            <div className="flex items-center justify-center gap-6 flex-wrap">
               {[
-                "Карта не нужна",
-                "Данные в России",
-                "Отмена в любое время",
-              ].map(item => (
-                <div key={item} className="flex items-center gap-1.5 text-xs"
-                  style={{ color: "hsl(var(--muted-foreground))" }}>
-                  <Icon name="Check" size={12} style={{ color: "var(--signal-green)" }} />
-                  {item}
+                { icon: "Lock", text: "SSL шифрование" },
+                { icon: "CreditCard", text: "Оплата через ЮKassa" },
+                { icon: "RotateCcw", text: "Отмена в любой момент" },
+                { icon: "MapPin", text: "Серверы в России" },
+              ].map((item) => (
+                <div key={item.text} className="flex items-center gap-1.5 text-xs"
+                  style={{ color: "hsl(var(--muted-foreground))", opacity: 0.6 }}>
+                  <Icon name={item.icon} fallback="Check" size={11} />
+                  {item.text}
                 </div>
               ))}
             </div>
@@ -94,106 +69,101 @@ export default function LandingFooter({ onNavigate }: LandingFooterProps) {
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }} className="px-6 py-10">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+      {/* ── FOOTER ── */}
+      <footer style={{ borderTop: "1px solid hsl(var(--border))" }}>
+        <div className="max-w-6xl mx-auto px-6 py-14">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
             {/* Brand */}
-            <div>
-              <div className="flex items-center gap-2.5 mb-3">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+            <div className="md:col-span-1">
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                   style={{ background: "var(--electric)" }}>
-                  <Icon name="Navigation" size={14} style={{ color: "hsl(210 25% 4%)" }} />
+                  <Icon name="Navigation" size={15} style={{ color: "hsl(210 25% 4%)" }} />
                 </div>
-                <span className="font-bold tracking-tight">Solo<span className="gradient-text">Fly</span></span>
+                <span className="font-black text-lg tracking-tight">
+                  Solo<span className="gradient-text">Fly</span>
+                </span>
               </div>
-              <p className="text-xs leading-relaxed" style={{ color: "hsl(var(--muted-foreground))" }}>
-                Интеллектуальная система автономного управления БПЛА. Россия, 2026.
+              <p className="text-xs leading-relaxed mb-4" style={{ color: "hsl(var(--muted-foreground))" }}>
+                Интеллектуальная платформа управления БПЛА нового поколения. Разработка ООО «МАТ-Лабс», Россия.
               </p>
-              <div className="flex items-center gap-1.5 mt-3">
-                <span className="dot-online" style={{ width: 5, height: 5 }} />
-                <span className="text-xs" style={{ color: "var(--signal-green)" }}>Система онлайн</span>
+              <div className="flex items-center gap-2">
+                <span className="dot-online" />
+                <span className="text-xs" style={{ color: "var(--signal-green)" }}>Система работает</span>
               </div>
             </div>
 
-            {/* Product */}
+            {/* Продукт */}
             <div>
-              <div className="font-semibold text-xs mb-3 tracking-wider uppercase"
-                style={{ color: "hsl(var(--muted-foreground))" }}>Продукт</div>
-              <ul className="space-y-2">
+              <div className="text-xs font-bold tracking-widest uppercase mb-4"
+                style={{ color: "hsl(var(--muted-foreground))", opacity: 0.5 }}>Продукт</div>
+              <ul className="space-y-2.5">
                 {[
-                  { label: "Возможности", action: () => {} },
-                  { label: "Тарифы", action: () => {} },
-                  { label: "Конструктор БПЛА", action: () => onNavigate("dronebuilder") },
-                  { label: "API документация", action: () => onNavigate("api") },
-                ].map(item => (
-                  <li key={item.label}>
-                    <button onClick={item.action}
-                      className="text-xs hover:text-foreground transition-colors text-left"
-                      style={{ color: "hsl(var(--muted-foreground))" }}>
-                      {item.label}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Company */}
-            <div>
-              <div className="font-semibold text-xs mb-3 tracking-wider uppercase"
-                style={{ color: "hsl(var(--muted-foreground))" }}>Компания</div>
-              <ul className="space-y-2">
-                {[
-                  { label: "О проекте", href: null },
-                  { label: "Новости", href: null },
-                  { label: "Поддержка", action: () => onNavigate("support") },
-                  { label: "ООО МАТ-Лабс", href: "https://mat-labs.ru" },
-                ].map(item => (
-                  <li key={item.label}>
-                    {item.href ? (
-                      <a href={item.href} target="_blank" rel="noopener noreferrer"
-                        className="text-xs hover:text-foreground transition-colors"
-                        style={{ color: "hsl(var(--muted-foreground))" }}>
-                        {item.label}
-                      </a>
-                    ) : (
-                      <button
-                        onClick={item.action ?? undefined}
-                        className="text-xs hover:text-foreground transition-colors text-left"
-                        style={{ color: "hsl(var(--muted-foreground))" }}>
-                        {item.label}
+                  { label: "Командный центр", page: "dashboard" },
+                  { label: "Конструктор БПЛА", page: "dronebuilder" },
+                  { label: "Тарифы", anchor: "#pricing" },
+                  { label: "Документация", anchor: "#" },
+                ].map((link) => (
+                  <li key={link.label}>
+                    {link.page ? (
+                      <button onClick={() => onNavigate(link.page!)}
+                        className="text-sm hover:opacity-100 transition-opacity text-left"
+                        style={{ color: "hsl(var(--muted-foreground))", opacity: 0.7 }}>
+                        {link.label}
                       </button>
+                    ) : (
+                      <a href={link.anchor || "#"}
+                        className="text-sm hover:opacity-100 transition-opacity"
+                        style={{ color: "hsl(var(--muted-foreground))", opacity: 0.7 }}>
+                        {link.label}
+                      </a>
                     )}
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Legal */}
+            {/* Компания */}
             <div>
-              <div className="font-semibold text-xs mb-3 tracking-wider uppercase"
-                style={{ color: "hsl(var(--muted-foreground))" }}>Правовое</div>
-              <ul className="space-y-2">
+              <div className="text-xs font-bold tracking-widest uppercase mb-4"
+                style={{ color: "hsl(var(--muted-foreground))", opacity: 0.5 }}>Компания</div>
+              <ul className="space-y-2.5">
                 {[
-                  { label: "Политика конфиденциальности", href: "/?privacy=1" },
-                  { label: "152-ФЗ соблюдён", href: null },
-                  { label: "Воздушный кодекс РФ", href: null },
-                ].map(item => (
-                  <li key={item.label}>
-                    {item.href ? (
-                      <a href={item.href} target="_blank" rel="noopener noreferrer"
-                        className="text-xs hover:text-foreground transition-colors flex items-center gap-1"
-                        style={{ color: "hsl(var(--muted-foreground))" }}>
-                        <Icon name="Shield" size={10} />
-                        {item.label}
-                      </a>
-                    ) : (
-                      <span className="text-xs flex items-center gap-1"
-                        style={{ color: "hsl(var(--muted-foreground))" }}>
-                        <Icon name="Check" size={10} style={{ color: "var(--signal-green)" }} />
-                        {item.label}
-                      </span>
-                    )}
+                  { label: "О проекте", anchor: "#about" },
+                  { label: "НИОКР 2026", anchor: "#rnd" },
+                  { label: "Технология", anchor: "#technology" },
+                  { label: "mat-labs.ru", href: "https://mat-labs.ru" },
+                ].map((link) => (
+                  <li key={link.label}>
+                    <a href={link.href || link.anchor || "#"}
+                      target={link.href ? "_blank" : undefined}
+                      rel={link.href ? "noopener noreferrer" : undefined}
+                      className="text-sm hover:opacity-100 transition-opacity"
+                      style={{ color: "hsl(var(--muted-foreground))", opacity: 0.7 }}>
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Правовое */}
+            <div>
+              <div className="text-xs font-bold tracking-widest uppercase mb-4"
+                style={{ color: "hsl(var(--muted-foreground))", opacity: 0.5 }}>Правовое</div>
+              <ul className="space-y-2.5">
+                {[
+                  { label: "Соответствие 152-ФЗ", anchor: "/?privacy=1" },
+                  { label: "Воздушный кодекс РФ", anchor: "#" },
+                  { label: "Политика конфиденциальности", anchor: "/?privacy=1" },
+                  { label: "Условия использования", anchor: "#" },
+                ].map((link) => (
+                  <li key={link.label}>
+                    <a href={link.anchor}
+                      className="text-sm hover:opacity-100 transition-opacity"
+                      style={{ color: "hsl(var(--muted-foreground))", opacity: 0.7 }}>
+                      {link.label}
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -201,22 +171,29 @@ export default function LandingFooter({ onNavigate }: LandingFooterProps) {
           </div>
 
           {/* Bottom bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6"
-            style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-            <span className="text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>
-              © {new Date().getFullYear()} ООО МАТ-Лабс · solofly.ru
-            </span>
-            <div className="flex items-center gap-4 text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>
-              <span className="flex items-center gap-1">
-                <Icon name="MapPin" size={10} style={{ color: "var(--electric)" }} />
-                Россия
-              </span>
-              <span>·</span>
-              <a href="https://mat-labs.ru" target="_blank" rel="noopener noreferrer"
-                className="hover:opacity-80 transition-opacity" style={{ color: "var(--electric)" }}>
-                mat-labs.ru
-              </a>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8"
+            style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="text-xs" style={{ color: "hsl(var(--muted-foreground))", opacity: 0.45 }}>
+              © {new Date().getFullYear()} ООО «МАТ-Лабс» · Все права защищены
             </div>
+            <div className="flex items-center gap-4">
+              {[
+                { icon: "ShieldCheck", label: "152-ФЗ" },
+                { icon: "Server", label: "Серверы РФ" },
+                { icon: "Lock", label: "TLS 1.3" },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center gap-1.5 text-xs"
+                  style={{ color: "hsl(var(--muted-foreground))", opacity: 0.45 }}>
+                  <Icon name={item.icon} fallback="Check" size={11} />
+                  {item.label}
+                </div>
+              ))}
+            </div>
+            <a href="https://mat-labs.ru" target="_blank" rel="noopener noreferrer"
+              className="text-xs font-semibold hover:opacity-80 transition-opacity"
+              style={{ color: "var(--electric)" }}>
+              mat-labs.ru
+            </a>
           </div>
         </div>
       </footer>
