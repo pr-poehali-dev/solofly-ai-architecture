@@ -36,24 +36,7 @@ function relTime(iso: string) {
   return `${Math.floor(s / 3600)} ч назад`;
 }
 
-const visionClasses = [
-  { name: "Человек", count: 1847, confidence: 98.1, color: "var(--danger)" },
-  { name: "Техника", count: 632, confidence: 96.4, color: "var(--warning)" },
-  { name: "Здание", count: 2941, confidence: 99.2, color: "var(--electric)" },
-  { name: "Препятствие", count: 1203, confidence: 95.8, color: "var(--signal-green)" },
-  { name: "Транспорт", count: 489, confidence: 97.0, color: "var(--warning)" },
-  { name: "Ландшафт", count: 5124, confidence: 99.6, color: "var(--electric)" },
-];
-
-const rlLog = [
-  { ep: 1247, reward: 94.2, improvement: "+0.3", method: "PPO", note: "Улучшена огибание при ветре > 10 м/с" },
-  { ep: 1246, reward: 93.9, improvement: "+0.1", method: "PPO", note: "Оптимизация расхода заряда на манёврах" },
-  { ep: 1245, reward: 93.8, improvement: "+0.4", method: "PPO", note: "Посадка на движущуюся платформу (+12%)" },
-  { ep: 1244, reward: 93.4, improvement: "+0.2", method: "SAC", note: "Адаптация к турбулентности класса B" },
-  { ep: 1243, reward: 93.2, improvement: "+0.0", method: "SAC", note: "Без изменений — стабилизация" },
-];
-
-type TabType = "models" | "vision" | "rl" | "transfer" | "online" | "explain";
+type TabType = "models" | "explain";
 
 export default function AIPage() {
   const [tab, setTab] = useState<TabType>("models");
@@ -117,13 +100,12 @@ export default function AIPage() {
       </div>
 
       {/* Overview */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Моделей",          val: loadingAi ? "…" : String(aiData?.total_models ?? models.length), color: "var(--electric)",      icon: "Brain" },
-          { label: "Циклов RL",        val: loadingAi ? "…" : totalCycles,                                    color: "var(--signal-green)",  icon: "RefreshCw" },
-          { label: "Ср. точность",     val: loadingAi ? "…" : `${avgAccuracy}%`,                              color: "var(--signal-green)",  icon: "Target" },
-          { label: "Классов объектов", val: String(visionClasses.length),                                     color: "var(--electric)",      icon: "Layers" },
-          { label: "Задержка инференса",val: "12 мс",                                                         color: "var(--signal-green)",  icon: "Zap" },
+          { label: "Моделей",       val: loadingAi ? "…" : String(aiData?.total_models ?? models.length), color: "var(--electric)",     icon: "Brain" },
+          { label: "Циклов обучения", val: loadingAi ? "…" : totalCycles,                                  color: "var(--signal-green)", icon: "RefreshCw" },
+          { label: "Ср. точность",  val: loadingAi ? "…" : `${avgAccuracy}%`,                              color: "var(--signal-green)", icon: "Target" },
+          { label: "Статус ядра",   val: "Активно",                                                        color: "var(--signal-green)", icon: "Zap" },
         ].map(s => (
           <div key={s.label} className="panel p-4 rounded-xl">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center mb-2" style={{ background: `${s.color}14` }}>
@@ -138,12 +120,8 @@ export default function AIPage() {
       {/* Tabs */}
       <div className="flex gap-1 overflow-x-auto" style={{ background: "hsl(var(--input))", borderRadius: 10, padding: 4, width: "fit-content" }}>
         {([
-          { key: "models",   label: "Модели" },
-          { key: "vision",   label: "Зрение (3.3)" },
-          { key: "rl",       label: "RL Обучение (3.5)" },
-          { key: "transfer", label: "SIM→REAL" },
-          { key: "online",   label: "Онлайн-адаптация" },
-          { key: "explain",  label: "🔍 Объяснения" },
+          { key: "models",  label: "Модели" },
+          { key: "explain", label: "🔍 Объяснения" },
         ] as { key: TabType; label: string }[]).map(t => (
           <button
             key={t.key}
@@ -199,57 +177,8 @@ export default function AIPage() {
       )}
 
 
-      {/* --- VISION --- */}
-      {tab === "vision" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div className="panel rounded-xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-sm">Классы распознавания (VisionCore)</h2>
-              <span className="tag tag-electric">97.4% avg</span>
-            </div>
-            <div className="mb-3 text-xs px-2 py-1.5 rounded-lg" style={{ background: "rgba(0,212,255,0.06)", color: "var(--muted-foreground)", border: "1px solid rgba(0,212,255,0.12)" }}>
-              Демо-данные — обновятся при подключении модуля компьютерного зрения
-            </div>
-            <div className="space-y-3">
-              {visionClasses.map(c => (
-                <div key={c.name} className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full shrink-0" style={{ background: c.color }} />
-                  <span className="text-sm flex-1">{c.name}</span>
-                  <span className="hud-label">{c.count.toLocaleString()} объектов</span>
-                  <span className="hud-value text-xs w-12 text-right" style={{ color: c.color }}>{c.confidence}%</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="panel rounded-xl p-5">
-            <h2 className="font-semibold text-sm mb-4">Сенсорный стек (3.3)</h2>
-            <div className="space-y-2">
-              {[
-                { sensor: "Основная камера (4K, 60fps)", status: "active", latency: "8 мс" },
-                { sensor: "Тепловизор (ночь/туман)", status: "active", latency: "12 мс" },
-                { sensor: "Лидар (3D-карта)", status: "active", latency: "15 мс" },
-                { sensor: "Радар (обнаружение в осадках)", status: "standby", latency: "—" },
-                { sensor: "Стереокамера (глубина)", status: "active", latency: "10 мс" },
-              ].map(s => (
-                <div key={s.sensor} className="flex items-center justify-between p-3 rounded-lg" style={{ background: "hsl(var(--input))" }}>
-                  <div className="flex items-center gap-2">
-                    <span className={s.status === "active" ? "dot-online" : "dot-offline"} />
-                    <span className="text-xs">{s.sensor}</span>
-                  </div>
-                  <span className="hud-label">{s.latency}</span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 p-3 rounded-lg" style={{ background: "rgba(0,212,255,0.06)", border: "1px solid rgba(0,212,255,0.15)" }}>
-              <div className="hud-label mb-1">3D-карта окружения</div>
-              <div className="text-xs text-muted-foreground">PCL + лидар обновляют 3D-карту со скоростью 30 Гц. Дальность: 120 м.</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- RL TRAINING --- */}
-      {tab === "rl" && (
+      {/* --- RL TRAINING (удалено — симуляция) --- */}
+      {tab === "rl_disabled" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="panel rounded-xl p-5">
             <h2 className="font-semibold text-sm mb-1">Обучение с подкреплением</h2>
@@ -307,8 +236,8 @@ export default function AIPage() {
         </div>
       )}
 
-      {/* --- SIM2REAL TRANSFER --- */}
-      {tab === "transfer" && (
+      {/* --- SIM2REAL TRANSFER (удалено — симуляция) --- */}
+      {tab === "transfer_disabled" && (
         <div className="space-y-4">
           <div className="panel-glow rounded-xl p-6">
             <h2 className="font-semibold text-sm mb-1">Трансферное обучение: Симуляция → Реальный полёт</h2>
@@ -344,8 +273,8 @@ export default function AIPage() {
         </div>
       )}
 
-      {/* --- ONLINE ADAPTATION --- */}
-      {tab === "online" && (
+      {/* --- ONLINE ADAPTATION (удалено — симуляция) --- */}
+      {tab === "online_disabled" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="panel rounded-xl p-5">
             <h2 className="font-semibold text-sm mb-1">Онлайн-обучение (Online ML)</h2>

@@ -1,11 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import LandingIndustries from "./LandingIndustries";
-import LandingAICapitan  from "./LandingAICapitan";
-import LandingAIBank     from "./LandingAIBank";
-import LandingMultiEnv   from "./LandingMultiEnv";
 import LandingBento      from "./LandingBento";
-import LandingCompare    from "./LandingCompare";
 import LandingGrant      from "./LandingGrant";
 import LandingOnboarding from "./LandingOnboarding";
 import LandingPricing    from "./LandingPricing";
@@ -22,22 +18,12 @@ const TABS = [
   },
   {
     id: "tech",
-    icon: "Brain",
-    label: "Технологии",
-    sub: "ИИ, архитектура, совместимость",
+    icon: "Cpu",
+    label: "Возможности",
+    sub: "Что умеет платформа",
     color: "var(--signal-green)",
     accent: "rgba(0,255,136,0.07)",
     border: "rgba(0,255,136,0.25)",
-  },
-  {
-    id: "grant",
-    icon: "Award",
-    label: "Конкурс",
-    sub: "НИОКР · Старт-Пром-1",
-    color: "#a78bfa",
-    accent: "rgba(167,139,250,0.07)",
-    border: "rgba(167,139,250,0.25)",
-    badge: "ФСИ",
   },
   {
     id: "pricing",
@@ -61,8 +47,7 @@ export default function LandingTabs({ onNavigate }: Props) {
 
   return (
     <section className="px-6 py-10 max-w-6xl mx-auto">
-      {/* Tab nav */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
         {TABS.map(tab => {
           const isOpen = active === tab.id;
           return (
@@ -76,12 +61,6 @@ export default function LandingTabs({ onNavigate }: Props) {
                 boxShadow: isOpen ? `0 0 30px ${tab.color}12` : undefined,
               }}
             >
-              {tab.badge && (
-                <div className="absolute top-3 right-3 px-1.5 py-0.5 rounded text-xs font-bold"
-                  style={{ background: `${tab.color}20`, color: tab.color, fontSize: 8 }}>
-                  {tab.badge}
-                </div>
-              )}
               <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
                 style={{
                   background: isOpen ? `${tab.color}18` : "rgba(255,255,255,0.05)",
@@ -109,16 +88,9 @@ export default function LandingTabs({ onNavigate }: Props) {
         })}
       </div>
 
-      {/* Expanded content */}
       {active && activeTab && (
-        <div
-          className="rounded-2xl overflow-hidden"
-          style={{
-            border: `1px solid ${activeTab.border}`,
-            background: activeTab.accent,
-          }}
-        >
-          {/* Panel header */}
+        <div className="rounded-2xl overflow-hidden"
+          style={{ border: `1px solid ${activeTab.border}`, background: activeTab.accent }}>
           <div className="flex items-center justify-between px-6 py-4"
             style={{ borderBottom: `1px solid ${activeTab.border}` }}>
             <div className="flex items-center gap-3">
@@ -129,42 +101,16 @@ export default function LandingTabs({ onNavigate }: Props) {
               <span className="font-bold text-sm">{activeTab.label}</span>
               <span className="text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>· {activeTab.sub}</span>
             </div>
-            <button
-              onClick={() => setActive(null)}
+            <button onClick={() => setActive(null)}
               className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:opacity-70"
               style={{ background: "rgba(255,255,255,0.06)" }}>
               <Icon name="X" size={13} style={{ color: "hsl(var(--muted-foreground))" }} />
             </button>
           </div>
 
-          {/* Panel body */}
           <div className="px-4 py-6 md:px-6">
-            {active === "industries" && (
-              <LandingIndustries onNavigate={onNavigate} />
-            )}
-
-            {active === "tech" && (
-              <div className="space-y-4">
-                <LandingAICapitan onNavigate={onNavigate} />
-                <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
-                  <LandingAIBank />
-                </div>
-                <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
-                  <LandingMultiEnv />
-                </div>
-                <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
-                  <LandingBento />
-                </div>
-                <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
-                  <LandingCompare />
-                </div>
-              </div>
-            )}
-
-            {active === "grant" && (
-              <LandingGrant />
-            )}
-
+            {active === "industries" && <LandingIndustries onNavigate={onNavigate} />}
+            {active === "tech" && <LandingBento />}
             {active === "pricing" && (
               <div className="space-y-4">
                 <LandingOnboarding onNavigate={onNavigate} />
@@ -176,6 +122,11 @@ export default function LandingTabs({ onNavigate }: Props) {
           </div>
         </div>
       )}
+
+      {/* Grant — скрытый блок, только для прямой ссылки */}
+      <div style={{ display: "none" }}>
+        <LandingGrant />
+      </div>
     </section>
   );
 }
