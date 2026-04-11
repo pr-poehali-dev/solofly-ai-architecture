@@ -446,4 +446,14 @@ export const authApi = {
     authReq<{ user: User }>("me"),
   logout: () =>
     authReq<{ ok: boolean }>("logout", { method: "POST" }),
+  update: (data: {
+    name?:             string;
+    email?:            string;
+    current_password?: string;
+    new_password?:     string;
+    avatar_color?:     string;
+  }) => authReq<{ ok: boolean; user: User }>("update", {
+    method: "PATCH",
+    body:   JSON.stringify(data),
+  }),
 };

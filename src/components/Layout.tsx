@@ -32,7 +32,7 @@ const mobileTabItems = [
   { id: "flightcontrol", label: "Пульт",    icon: "Navigation" },
   { id: "missions",      label: "Миссии",   icon: "Target" },
   { id: "monitoring",    label: "События",  icon: "Activity" },
-  { id: "ai",            label: "ИИ",       icon: "Brain" },
+  { id: "profile",       label: "Профиль",  icon: "User" },
 ];
 
 export default function Layout({ currentPage, onNavigate, children, isLanding }: LayoutProps) {
@@ -110,6 +110,7 @@ export default function Layout({ currentPage, onNavigate, children, isLanding }:
           }}>
           {mobileTabItems.map(item => {
             const active = currentPage === item.id;
+            const isProfile = item.id === "profile";
             return (
               <button
                 key={item.id}
@@ -118,7 +119,18 @@ export default function Layout({ currentPage, onNavigate, children, isLanding }:
                 style={{ color: active ? "var(--electric)" : "hsl(var(--muted-foreground))" }}
               >
                 <div className="relative">
-                  <Icon name={item.icon} fallback="Circle" size={20} />
+                  {isProfile && user ? (
+                    <div className="w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold"
+                      style={{
+                        background: active ? user.avatar_color : `${user.avatar_color}60`,
+                        color: "hsl(210 25% 4%)",
+                        fontSize: 10,
+                      }}>
+                      {user.name.charAt(0).toUpperCase()}
+                    </div>
+                  ) : (
+                    <Icon name={item.icon} fallback="Circle" size={20} />
+                  )}
                   {active && (
                     <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full"
                       style={{ background: "var(--electric)" }} />
@@ -173,16 +185,29 @@ export default function Layout({ currentPage, onNavigate, children, isLanding }:
         {/* Bottom — профиль */}
         <div className="p-3" style={{ borderTop: "1px solid hsl(var(--sidebar-border))" }}>
           {user && (
-            <div className="flex items-center gap-2.5 p-3 rounded-lg mb-1" style={{ background: "hsl(var(--sidebar-accent))" }}>
+            <button
+              onClick={() => onNavigate("profile")}
+              className="w-full flex items-center gap-2.5 p-3 rounded-lg mb-1 transition-all hover:opacity-80"
+              style={{
+                background: currentPage === "profile"
+                  ? `${user.avatar_color}18`
+                  : "hsl(var(--sidebar-accent))",
+                border: currentPage === "profile"
+                  ? `1px solid ${user.avatar_color}40`
+                  : "1px solid transparent",
+              }}
+            >
               <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 font-bold text-xs"
                 style={{ background: user.avatar_color, color: "hsl(210 25% 4%)" }}>
                 {user.name.charAt(0).toUpperCase() || "?"}
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 text-left">
                 <div className="text-xs font-semibold truncate">{user.name}</div>
-                <div className="hud-label truncate">{user.role === "admin" ? "Администратор" : "Оператор"}</div>
+                <div className="hud-label truncate" style={{ color: "var(--electric)", fontSize: 9 }}>
+                  Редактировать профиль →
+                </div>
               </div>
-            </div>
+            </button>
           )}
           <button onClick={handleLogout} className="nav-item w-full">
             <Icon name="LogOut" size={15} />

@@ -2,11 +2,18 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import { authApi, type User } from "@/lib/api";
 
 interface AuthContextValue {
-  user:     User | null;
-  loading:  boolean;
-  login:    (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
-  logout:   () => Promise<void>;
+  user:       User | null;
+  loading:    boolean;
+  login:      (email: string, password: string) => Promise<void>;
+  register:   (email: string, password: string, name: string) => Promise<void>;
+  logout:     () => Promise<void>;
+  updateUser: (data: {
+    name?:             string;
+    email?:            string;
+    current_password?: string;
+    new_password?:     string;
+    avatar_color?:     string;
+  }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -43,8 +50,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const updateUser = useCallback(async (data: Parameters<AuthContextValue["updateUser"]>[0]) => {
+    const res = await authApi.update(data);
+    setUser(res.user);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

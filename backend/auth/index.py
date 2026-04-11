@@ -4,6 +4,7 @@ POST /?action=register  — регистрация (email, password, name)
 POST /?action=login     — вход (email, password) → token в Set-Cookie
 POST /?action=logout    — выход (удаляет сессию)
 GET  /?action=me        — данные текущего пользователя по токену
+PATCH /?action=update   — изменить имя, email, пароль, цвет аватара
 """
 import os, json, secrets, hashlib
 from datetime import datetime, timezone
@@ -14,7 +15,7 @@ SCHEMA = "t_p93256795_solofly_ai_architect"
 
 CORS = {
     "Access-Control-Allow-Origin":  "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, X-Auth-Token",
 }
 
@@ -192,6 +193,80 @@ def handler(event: dict, context) -> dict:
                             "last_login":   fmt(user["last_login"]),
                         }
                     })}
+
+        # ── PATCH /?action=update — обновить профиль ─────────────────────────
+        elif method == "PATCH" and action == "update":
+            token = get_token(event)
+            if not token:
+                return {"statusCode": 401, "headers": CORS,
+                        "body": json.dumps({"error": "Не авторизован"})}
+
+            # Проверяем сессию
+            cur.execute(f"""
+                SELECT u.id FROM {SCHEMA}.sessions s
+                JOIN {SCHEMA}.users u ON u.id = s.user_id
+                WHERE s.token = %s AND s.expires_at > now()
+            """, (token,))
+            row = cur.fetchone()
+            if not row:
+                return {"statusCode": 401, "headers": CORS,
+                        "body": json.dumps({"error": "Сессия истекла"})}
+
+            user_id = row["id"]
+            body    = json.loads(event.get("body") or "{}")
+
+            updates = {}
+
+            # Имя
+            if "name" in body and body["name"].strip():
+                updates["name"] = body["name"].strip()
+
+            # Email — проверяем уникальность
+            if "email" in body:
+                new_email = body["email"].strip().lower()
+                cur.execute(
+                    f"SELECT id FROM {SCHEMA}.users WHERE email = %s AND id != %s",
+                    (new_email, user_id)
+                )
+                if cur.fetchone():
+                    return {"statusCode": 409, "headers": CORS,
+                            "body": json.dumps({"error": "Этот email уже занят"})}
+                updates["email"] = new_email
+
+            # Новый пароль — требуем текущий
+            if "new_password" in body:
+                current_pwd = body.get("current_password", "")
+                cur.execute(
+                    f"SELECT password_hash FROM {SCHEMA}.users WHERE id = %s",
+                    (user_id,)
+                )
+                u = cur.fetchone()
+                if u["password_hash"] != hash_password(current_pwd):
+                    return {"statusCode": 403, "headers": CORS,
+                            "body": json.dumps({"error": "Текущий пароль неверный"})}
+                if len(body["new_password"]) < 6:
+                    return {"statusCode": 400, "headers": CORS,
+                            "body": json.dumps({"error": "Пароль минимум 6 символов"})}
+                updates["password_hash"] = hash_password(body["new_password"])
+
+            # Цвет аватара
+            if "avatar_color" in body:
+                updates["avatar_color"] = body["avatar_color"]
+
+            if not updates:
+                return {"statusCode": 400, "headers": CORS,
+                        "body": json.dumps({"error": "Нечего обновлять"})}
+
+            set_clause = ", ".join(f"{k} = %s" for k in updates)
+            cur.execute(
+                f"UPDATE {SCHEMA}.users SET {set_clause} WHERE id = %s RETURNING id, email, name, role, avatar_color",
+                list(updates.values()) + [user_id]
+            )
+            updated = dict(cur.fetchone())
+            conn.commit()
+
+            return {"statusCode": 200, "headers": CORS,
+                    "body": json.dumps({"ok": True, "user": updated})}
 
         # ── POST /?action=logout ──────────────────────────────────────────────
         elif method == "POST" and action == "logout":

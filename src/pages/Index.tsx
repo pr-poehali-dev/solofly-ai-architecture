@@ -17,11 +17,13 @@ import IntegrationsPage from "./IntegrationsPage";
 import ScanningPage from "./ScanningPage";
 import ScanArchivePage from "./ScanArchivePage";
 import UCPPage from "./UCPPage";
+import ProfilePage from "./ProfilePage";
 
 type Page =
   | "landing" | "dashboard" | "missions" | "flightcontrol"
   | "ai" | "swarm" | "monitoring" | "flightlog"
-  | "security" | "api" | "support" | "integrations" | "scanning" | "scanarchive" | "ucp";
+  | "security" | "api" | "support" | "integrations" | "scanning" | "scanarchive" | "ucp"
+  | "profile";
 
 export default function Index() {
   const { user, loading } = useAuth();
@@ -67,6 +69,7 @@ export default function Index() {
       case "scanning":    return <ScanningPage onNavigate={navigate} />;
       case "scanarchive": return <ScanArchivePage />;
       case "ucp":         return <UCPPage />;
+      case "profile":     return <ProfilePage />;
       default: return <DashboardPage />;
     }
   };
