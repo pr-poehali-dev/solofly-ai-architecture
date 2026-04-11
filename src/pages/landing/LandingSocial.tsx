@@ -1,7 +1,6 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { testimonials, faqs } from "./landingData";
-import PricingPage from "../PricingPage";
 
 interface LandingSocialProps {
   onNavigate: (p: string) => void;
@@ -80,11 +79,6 @@ export default function LandingSocial({ onNavigate }: LandingSocialProps) {
             </div>
           ))}
         </div>
-      </section>
-
-      {/* ── Тарифы ── */}
-      <section className="py-4 max-w-5xl mx-auto">
-        <PricingPage onNavigate={onNavigate} standalone={false} />
       </section>
 
       {/* ── CTA финальный ── */}

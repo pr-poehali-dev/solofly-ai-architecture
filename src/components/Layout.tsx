@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
-import { billing, type MyPlan } from "@/lib/api";
 
 interface LayoutProps {
   currentPage: string;
@@ -26,7 +25,6 @@ const navItems = [
   { id: "api",          label: "API",                icon: "Code2" },
   { id: "integrations", label: "Подключения",        icon: "Plug" },
   { id: "droneconnect", label: "Подключение дрона",  icon: "Wifi" },
-  { id: "pricing",      label: "Тарифы",             icon: "CreditCard" },
   { id: "support",      label: "Поддержка",          icon: "Headphones" },
 ];
 
@@ -42,12 +40,6 @@ const mobileTabItems = [
 export default function Layout({ currentPage, onNavigate, children, isLanding }: LayoutProps) {
   const isMobile = useIsMobile();
   const { user, logout } = useAuth();
-  const [myPlan, setMyPlan] = useState<MyPlan | null>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    billing.getMyPlan().then(r => setMyPlan(r.plan)).catch(() => {});
-  }, [user]);
 
   const handleLogout = async () => {
     await logout();
@@ -65,9 +57,6 @@ export default function Layout({ currentPage, onNavigate, children, isLanding }:
               <span className="font-bold text-base tracking-tight">Solo<span className="gradient-text">Fly</span></span>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => onNavigate("pricing")} className="btn-ghost px-4 py-2 rounded-lg text-xs flex items-center gap-1.5">
-                <Icon name="CreditCard" size={12} /> Тарифы
-              </button>
               <button onClick={() => onNavigate("dashboard")} className="btn-ghost px-4 py-2 rounded-lg text-xs">
                 Войти
               </button>
@@ -180,31 +169,6 @@ export default function Layout({ currentPage, onNavigate, children, isLanding }:
           </div>
           <div className="hud-value text-xs" style={{ color: "var(--electric)" }}>2 дрона в полёте</div>
         </div>
-
-        {/* Баннер тарифа */}
-        {myPlan && myPlan.plan_id === "free" && (
-          <button
-            onClick={() => onNavigate("pricing")}
-            className="mx-3 mt-2 p-3 rounded-lg w-[calc(100%-24px)] text-left transition-all hover:opacity-80"
-            style={{ background: "rgba(0,212,255,0.07)", border: "1px solid rgba(0,212,255,0.2)" }}
-          >
-            <div className="flex items-center justify-between mb-1">
-              <span className="hud-label">Тариф: Старт</span>
-              <span className="tag tag-electric" style={{ fontSize: 8 }}>Free</span>
-            </div>
-            <div className="text-xs font-semibold" style={{ color: "var(--electric)" }}>
-              Обновить → Про ✦
-            </div>
-          </button>
-        )}
-        {myPlan && myPlan.plan_id !== "free" && (
-          <div className="mx-3 mt-2 p-2.5 rounded-lg" style={{ background: "rgba(0,255,136,0.06)", border: "1px solid rgba(0,255,136,0.15)" }}>
-            <div className="flex items-center justify-between">
-              <span className="hud-label">Тариф</span>
-              <span className="tag tag-green" style={{ fontSize: 9 }}>{myPlan.name}</span>
-            </div>
-          </div>
-        )}
 
         {/* Nav */}
         <nav className="flex-1 p-3 space-y-0.5 mt-2">
