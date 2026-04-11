@@ -1,0 +1,22 @@
+{
+  "tests": [
+    {
+      "name": "POST no token",
+      "method": "POST",
+      "path": "/",
+      "body": {"lat": 55.75, "lon": 37.61},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "X-Drone-Token required"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "POST invalid token",
+      "method": "POST",
+      "path": "/",
+      "body": {"token": "invalid_token_xyz", "lat": 55.75, "lon": 37.61},
+      "expectedStatus": 403,
+      "expectedBody": {"error": "Неверный токен дрона"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

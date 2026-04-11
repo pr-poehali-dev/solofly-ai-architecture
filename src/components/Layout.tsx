@@ -25,6 +25,7 @@ const navItems = [
   { id: "security",     label: "Безопасность",       icon: "Shield" },
   { id: "api",          label: "API",                icon: "Code2" },
   { id: "integrations", label: "Подключения",        icon: "Plug" },
+  { id: "droneconnect", label: "Подключение дрона",  icon: "Wifi" },
   { id: "pricing",      label: "Тарифы",             icon: "CreditCard" },
   { id: "support",      label: "Поддержка",          icon: "Headphones" },
 ];

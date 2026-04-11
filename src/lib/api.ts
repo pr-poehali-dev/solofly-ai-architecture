@@ -9,7 +9,9 @@ const URLS = {
   scanning:  "https://functions.poehali.dev/8f8ffd51-a285-42f6-9148-f178ea5947c4",
   presence:  "https://functions.poehali.dev/5b06fdf4-7c9d-4b21-838b-0b3498110a8d",
   auth:      "https://functions.poehali.dev/673a3df3-6c29-4329-8ed8-5e321ed71a9d",
-  billing:   "https://functions.poehali.dev/e1809c69-3d90-440b-8b7b-44cc4b722bfc",
+  billing:        "https://functions.poehali.dev/e1809c69-3d90-440b-8b7b-44cc4b722bfc",
+  droneConnect:   "https://functions.poehali.dev/cdf76959-425f-4f9c-a2eb-491d28726328",
+  droneTelemetry: "https://functions.poehali.dev/7e8bdc4b-1e8b-47c8-901c-462ebf450950",
 };
 
 async function req<T>(

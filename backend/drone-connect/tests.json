@@ -1,0 +1,29 @@
+{
+  "tests": [
+    {
+      "name": "GET list drones",
+      "method": "GET",
+      "path": "/?action=list",
+      "expectedStatus": 200,
+      "expectedBody": {"drones": []},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "GET invalid token returns 404",
+      "method": "GET",
+      "path": "/?token=invalid_token_test",
+      "expectedStatus": 404,
+      "expectedBody": {"error": "Токен не найден"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "POST register drone without hw_id",
+      "method": "POST",
+      "path": "/?action=register",
+      "body": {"name": "Test Drone Auto"},
+      "expectedStatus": 201,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

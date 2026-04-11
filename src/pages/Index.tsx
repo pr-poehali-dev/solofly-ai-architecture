@@ -18,14 +18,15 @@ import ScanningPage from "./ScanningPage";
 import ScanArchivePage from "./ScanArchivePage";
 import UCPPage from "./UCPPage";
 import ProfilePage from "./ProfilePage";
-import PrivacyPage  from "./PrivacyPage";
-import PricingPage  from "./PricingPage";
+import PrivacyPage       from "./PrivacyPage";
+import PricingPage       from "./PricingPage";
+import DroneConnectPage  from "./DroneConnectPage";
 
 type Page =
   | "landing" | "auth" | "dashboard" | "missions" | "flightcontrol"
   | "ai" | "swarm" | "monitoring" | "flightlog"
   | "security" | "api" | "support" | "integrations" | "scanning" | "scanarchive" | "ucp"
-  | "profile" | "privacy" | "pricing";
+  | "profile" | "privacy" | "pricing" | "droneconnect";
 
 export default function Index() {
   const { user, loading } = useAuth();
@@ -92,7 +93,8 @@ export default function Index() {
       case "ucp":         return <UCPPage />;
       case "profile":     return <ProfilePage />;
       case "privacy":     return <PrivacyPage />;
-      case "pricing":     return <PricingPage onNavigate={navigate} />;
+      case "pricing":       return <PricingPage onNavigate={navigate} />;
+      case "droneconnect":  return <DroneConnectPage />;
       case "auth":        return <DashboardPage />;
       default: return <DashboardPage />;
     }
