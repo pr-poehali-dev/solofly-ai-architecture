@@ -14,18 +14,50 @@ const URLS = {
   droneTelemetry: "https://functions.poehali.dev/7e8bdc4b-1e8b-47c8-901c-462ebf450950",
 };
 
+const DEFAULT_TIMEOUT_MS = 12_000;
+
 async function req<T>(
   fn: keyof typeof URLS,
   path = "/",
-  options: RequestInit = {}
+  options: RequestInit = {},
+  retries = 2
 ): Promise<T> {
   const url = URLS[fn] + (path === "/" ? "" : path);
-  const res = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
-  if (!res.ok) throw new Error(`${fn} ${res.status}`);
-  return res.json();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+
+  let lastError: Error = new Error("Unknown error");
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        ...options,
+      });
+      clearTimeout(timer);
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new Error(`[${fn}] HTTP ${res.status}${body ? `: ${body.slice(0, 120)}` : ""}`);
+      }
+
+      return res.json() as Promise<T>;
+    } catch (e) {
+      lastError = e instanceof Error ? e : new Error(String(e));
+
+      // Не ретраим: отменённые запросы, клиентские ошибки 4xx
+      const isAbort  = lastError.name === "AbortError";
+      const is4xx    = lastError.message.includes("HTTP 4");
+      if (isAbort || is4xx || attempt === retries) break;
+
+      // Экспоненциальная задержка: 500мс, 1000мс, ...
+      await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
+    }
+  }
+
+  clearTimeout(timer);
+  throw lastError;
 }
 
 // ─── Fleet ───────────────────────────────────────────────────────────────────

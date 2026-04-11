@@ -8,50 +8,87 @@ function isRealOnline(drone: Drone): boolean {
   return diffSec < 15;
 }
 
+const MAX_RETRY        = 5;
+const RETRY_BACKOFF_MS = 3000; // задержка после серии ошибок
+
 export function useLiveFleet(intervalMs = 3000) {
-  const [data, setData]       = useState<FleetResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
-  const retryCount            = useRef(0);
-  const MAX_RETRY             = 3;
+  const [data,        setData]        = useState<FleetResponse | null>(null);
+  const [loading,     setLoading]     = useState(true);
+  const [error,       setError]       = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const retryCount  = useRef(0);
+  const isMounted   = useRef(true);
+  const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const refresh = useCallback(async () => {
     try {
       const res = await fleet.getAll();
+      if (!isMounted.current) return;
 
-      // Помечаем реальные дроны и симулируем только виртуальные
+      // Симулируем телеметрию только для виртуальных дронов
       const hasFakeDrones = res.drones.some(d => !isRealOnline(d));
+      let finalRes = res;
+
       if (hasFakeDrones) {
-        await telemetry.simulate();
-        // Перечитываем после симуляции
-        const res2 = await fleet.getAll();
-        const tagged = res2.drones.map(d => ({ ...d, is_real: isRealOnline(d) }));
-        setData({ ...res2, drones: tagged });
-      } else {
-        // Все дроны реальные — не симулируем
-        const tagged = res.drones.map(d => ({ ...d, is_real: true }));
-        setData({ ...res, drones: tagged });
+        try {
+          await telemetry.simulate();
+          const res2 = await fleet.getAll();
+          if (isMounted.current) finalRes = res2;
+        } catch {
+          // Симуляция упала — используем данные первого запроса
+        }
       }
 
+      const tagged = finalRes.drones.map(d => ({ ...d, is_real: isRealOnline(d) }));
+      setData({ ...finalRes, drones: tagged });
       setError(null);
+      setLastUpdated(new Date());
       retryCount.current = 0;
+
     } catch (e) {
+      if (!isMounted.current) return;
       retryCount.current += 1;
+
+      // Показываем ошибку только после нескольких неудачных попыток подряд
       if (retryCount.current >= MAX_RETRY) {
-        setError(e instanceof Error ? e.message : "Ошибка соединения");
+        const msg = e instanceof Error ? e.message : "Ошибка соединения с сервером";
+        setError(msg);
+
+        // Замедляем интервал при устойчивой ошибке
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = setInterval(refresh, Math.max(intervalMs, RETRY_BACKOFF_MS));
+        }
       }
     } finally {
-      setLoading(false);
+      if (isMounted.current) setLoading(false);
     }
-  }, []);
+  }, [intervalMs]);
 
   useEffect(() => {
+    isMounted.current = true;
     refresh();
-    // intervalMs=0 — одноразовый запрос (для страниц без live-обновлений)
-    if (intervalMs <= 0) return;
-    const timer = setInterval(refresh, intervalMs);
-    return () => clearInterval(timer);
+
+    if (intervalMs > 0) {
+      timerRef.current = setInterval(refresh, intervalMs);
+    }
+
+    return () => {
+      isMounted.current = false;
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [refresh, intervalMs]);
 
-  return { data, loading, error, refresh };
+  // Ручной сброс ошибки при восстановлении связи
+  const resetError = useCallback(() => {
+    retryCount.current = 0;
+    setError(null);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = setInterval(refresh, intervalMs);
+    }
+    refresh();
+  }, [refresh, intervalMs]);
+
+  return { data, loading, error, lastUpdated, refresh, resetError };
 }
