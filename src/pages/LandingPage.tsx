@@ -1,6 +1,14 @@
 import { useState, useEffect } from "react";
-import LandingHero   from "./landing/LandingHero";
-import LandingSocial from "./landing/LandingSocial";
+import LandingHero       from "./landing/LandingHero";
+import LandingSocial     from "./landing/LandingSocial";
+import LandingInfo       from "./landing/LandingInfo";
+import LandingBento      from "./landing/LandingBento";
+import LandingTabs       from "./landing/LandingTabs";
+import LandingIndustries from "./landing/LandingIndustries";
+import LandingPricing    from "./landing/LandingPricing";
+import LandingReviews    from "./landing/LandingReviews";
+import LandingGrant      from "./landing/LandingGrant";
+import LandingFooter     from "./landing/LandingFooter";
 import { DemoModal, PromoPopup } from "./landing/LandingModals";
 
 interface Props { onNavigate: (p: string) => void; }
@@ -57,6 +65,14 @@ export default function LandingPage({ onNavigate }: Props) {
       />
 
       <LandingSocial onNavigate={onNavigate} />
+      <LandingInfo />
+      <LandingBento />
+      <LandingTabs onNavigate={onNavigate} />
+      <LandingIndustries onNavigate={onNavigate} />
+      <LandingReviews />
+      <LandingGrant />
+      <LandingPricing onNavigate={onNavigate} />
+      <LandingFooter onNavigate={onNavigate} />
 
     </div>
   );
