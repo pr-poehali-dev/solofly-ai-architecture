@@ -225,6 +225,43 @@ export default function LandingInfo() {
           </div>
         </div>
       </section>
+
+      {/* ── КОМАНДА ── */}
+      <section id="team" className="px-6 py-24 max-w-5xl mx-auto">
+        <div className="text-center mb-14">
+          <div className="tag tag-electric mb-4">Команда проекта</div>
+          <h2 className="text-4xl font-bold mb-4">Люди за <span className="gradient-text">SoloFly</span></h2>
+          <p className="text-muted-foreground max-w-xl mx-auto text-sm leading-relaxed">
+            Команда ООО «МАТ-Лабс» — инженеры и исследователи, разрабатывающие платформу автономного управления БПЛА.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { name: "Тюрин Максим",        role: "CEO, сооснователь",   tags: ["Стратегия", "Авиационное право"], letter: "М", hue: 200 },
+            { name: "Тюрин Александр",     role: "CTO, сооснователь",   tags: ["MAVLink", "Бортовое ПО"],        letter: "А", hue: 240 },
+            { name: "Петрушкин Олег",      role: "Lead ML Engineer",    tags: ["YOLO11", "Компьютерное зрение"], letter: "О", hue: 280 },
+            { name: "Красильников Данила", role: "Head of Product",     tags: ["UX", "Тестирование"],            letter: "Д", hue: 320 },
+          ].map((m) => (
+            <div key={m.name} className="rounded-2xl p-5"
+              style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg mb-4"
+                style={{ background: `hsl(${m.hue}deg 40% 18%)`, color: `hsl(${m.hue}deg 70% 60%)` }}>
+                {m.letter}
+              </div>
+              <div className="font-bold text-sm mb-0.5">{m.name}</div>
+              <div className="text-xs mb-3" style={{ color: "hsl(var(--muted-foreground))" }}>{m.role}</div>
+              <div className="flex flex-wrap gap-1">
+                {m.tags.map(t => (
+                  <span key={t} className="px-2 py-0.5 rounded text-xs"
+                    style={{ background: "rgba(0,212,255,0.08)", color: "var(--electric)", border: "1px solid rgba(0,212,255,0.15)" }}>
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
     </>
   );
 }
