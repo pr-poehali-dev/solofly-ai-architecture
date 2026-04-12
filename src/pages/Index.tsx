@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Layout from "@/components/Layout";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthPage from "./AuthPage";
+
 import LandingPage from "./LandingPage";
 import PaywallPage from "./PaywallPage";
 import DashboardPage from "./DashboardPage";
@@ -33,9 +34,45 @@ type Page =
 export default function Index() {
   const { user, loading, hasPlan, refreshUser } = useAuth();
   const [page, setPage] = useState<Page>("landing");
+  const [yandexProcessing, setYandexProcessing] = useState(false);
 
   const navigate = (p: string) => setPage(p as Page);
   const isLanding = page === "landing";
+
+  // Обработка callback от Яндекс (?code=...)
+  const handleYandexCallback = useCallback(async () => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    if (!code) return;
+
+    setYandexProcessing(true);
+    try {
+      const res = await fetch(
+        `https://functions.poehali.dev/10cbe5fa-e5d6-47d9-8b16-0520118ce11e?action=callback`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok && data.access_token) {
+        localStorage.setItem("sf_token", data.access_token);
+        window.history.replaceState({}, "", "/");
+        await refreshUser();
+        setPage("dashboard");
+      }
+    } finally {
+      setYandexProcessing(false);
+    }
+  }, [refreshUser]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("code")) {
+      handleYandexCallback();
+    }
+  }, [handleYandexCallback]);
 
   // Если вернулся с оплаты (?paid=1) — обновляем сессию
   useEffect(() => {
@@ -51,8 +88,8 @@ export default function Index() {
     }
   }, [user, refreshUser]);
 
-  // Спиннер загрузки
-  if (loading) {
+  // Спиннер загрузки / обработка Яндекс callback
+  if (loading || yandexProcessing) {
     return (
       <div className="min-h-screen grid-bg flex items-center justify-center">
         <div className="text-center">
@@ -60,7 +97,9 @@ export default function Index() {
             style={{ background: "rgba(0,212,255,0.15)", border: "1px solid rgba(0,212,255,0.3)" }}>
             <span style={{ color: "var(--electric)", fontSize: 28 }}>✈</span>
           </div>
-          <p className="hud-label animate-pulse">Загрузка SoloFly…</p>
+          <p className="hud-label animate-pulse">
+            {yandexProcessing ? "Авторизация через Яндекс…" : "Загрузка SoloFly…"}
+          </p>
         </div>
       </div>
     );

@@ -1,6 +1,10 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/contexts/AuthContext";
+import { YandexLoginButton } from "@/components/extensions/yandex-auth/YandexLoginButton";
+import { useYandexAuth } from "@/components/extensions/yandex-auth/useYandexAuth";
+
+const YANDEX_AUTH_URL = "https://functions.poehali.dev/10cbe5fa-e5d6-47d9-8b16-0520118ce11e";
 
 interface AuthPageProps {
   onSuccess: () => void;
@@ -15,6 +19,15 @@ export default function AuthPage({ onSuccess }: AuthPageProps) {
   const [consent, setConsent] = useState(false);
   const [loading, setLoad]  = useState(false);
   const [error, setError]   = useState<string | null>(null);
+
+  const yandexAuth = useYandexAuth({
+    apiUrls: {
+      authUrl: `${YANDEX_AUTH_URL}?action=auth-url`,
+      callback: `${YANDEX_AUTH_URL}?action=callback`,
+      refresh: `${YANDEX_AUTH_URL}?action=refresh`,
+      logout: `${YANDEX_AUTH_URL}?action=logout`,
+    },
+  });
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,6 +184,18 @@ export default function AuthPage({ onSuccess }: AuthPageProps) {
                 : <><Icon name="UserPlus" size={16} /> Создать аккаунт</>
             }
           </button>
+
+          <div className="flex items-center gap-3 my-1">
+            <div className="flex-1 h-px" style={{ background: "hsl(var(--border))" }} />
+            <span className="text-xs text-muted-foreground">или</span>
+            <div className="flex-1 h-px" style={{ background: "hsl(var(--border))" }} />
+          </div>
+
+          <YandexLoginButton
+            onClick={yandexAuth.login}
+            isLoading={yandexAuth.isLoading}
+            className="w-full"
+          />
         </form>
 
         <p className="text-center text-xs text-muted-foreground mt-4">
