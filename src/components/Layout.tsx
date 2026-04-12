@@ -86,15 +86,17 @@ export default function Layout({ currentPage, onNavigate, children, isLanding }:
             </div>
             <div className="flex items-center gap-1">
               {[
-                { label: "О проекте", anchor: "about" },
-                { label: "НИОКР", anchor: "rnd" },
-                { label: "Технология", anchor: "technology" },
-                { label: "Команда", anchor: "team" },
-                { label: "Контакты", anchor: "contacts" },
-                { label: "Тарифы", anchor: "pricing" },
+                { label: "О проекте",  anchor: "about",      title: "О платформе SoloFly — система управления БПЛА" },
+                { label: "НИОКР",      anchor: "rnd",        title: "НИОКР 2026 — разработка алгоритмов автономного управления БПЛА" },
+                { label: "Технология", anchor: "technology",  title: "Технология автономного управления дронами MAVLink Ardupilot PX4" },
+                { label: "Команда",    anchor: "team",        title: "Команда ООО МАТ-Лабс — разработчики системы управления БПЛА" },
+                { label: "Контакты",   anchor: "contacts",    title: "Контакты SoloFly — начать использование платформы управления дронами" },
+                { label: "Тарифы",     anchor: "pricing",     title: "Тарифы на платформу управления БПЛА SoloFly" },
               ].map(item => (
                 <button
                   key={item.anchor}
+                  title={item.title}
+                  aria-label={item.title}
                   onClick={() => {
                     const el = document.getElementById(item.anchor);
                     if (el) window.scrollTo({ top: el.offsetTop - 56, behavior: "smooth" });

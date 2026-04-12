@@ -56,12 +56,14 @@ export default function HeroSection({ onNavigate, onOpenDemo }: HeroSectionProps
       {/* CTA */}
       <div className="flex items-center justify-center gap-3 mb-16 flex-wrap fade-up">
         <button onClick={() => onNavigate("dashboard")}
+          title="Запустить систему автономного управления БПЛА SoloFly"
           className="btn-electric px-9 py-4 rounded-xl text-sm font-bold flex items-center gap-2 hover:scale-[1.03] transition-all"
           style={{ boxShadow: "0 0 32px rgba(0,212,255,0.25)" }}>
           <Icon name="Rocket" size={16} />
           Запустить систему
         </button>
         <button onClick={onOpenDemo}
+          title="Смотреть демо платформы управления БПЛА SoloFly"
           className="px-8 py-4 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all hover:scale-[1.02]"
           style={{
             background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)",
@@ -71,6 +73,7 @@ export default function HeroSection({ onNavigate, onOpenDemo }: HeroSectionProps
           Смотреть демо
         </button>
         <button onClick={() => onNavigate("dronebuilder")}
+          title="Конструктор БПЛА — бесплатные руководства по сборке дронов"
           className="px-7 py-4 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all hover:opacity-80"
           style={{ color: "hsl(var(--muted-foreground))" }}>
           <Icon name="Wrench" size={14} />
