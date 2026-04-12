@@ -8,7 +8,7 @@ export default function LandingFooter({ onNavigate }: LandingFooterProps) {
   return (
     <>
       {/* ── ФИНАЛЬНЫЙ CTA ── */}
-      <section className="px-6 py-24 max-w-5xl mx-auto">
+      <section id="contacts" className="px-6 py-24 max-w-5xl mx-auto">
         <div className="relative rounded-3xl p-12 text-center overflow-hidden"
           style={{
             background: "linear-gradient(135deg, rgba(0,212,255,0.08) 0%, rgba(0,255,136,0.05) 60%, rgba(0,212,255,0.04) 100%)",
