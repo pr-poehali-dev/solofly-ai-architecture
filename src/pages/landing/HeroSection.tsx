@@ -47,27 +47,6 @@ export default function HeroSection({ onNavigate, onOpenDemo }: HeroSectionProps
         Разработка алгоритмов адаптивной навигации и автономного принятия решений для промышленного применения.
       </p>
 
-      {/* Industry quick-links */}
-      <div className="flex items-center justify-center gap-2 mb-8 flex-wrap fade-up">
-        {[
-          { label: "Нефтегаз",    icon: "Flame"     },
-          { label: "Энергетика",  icon: "Zap"       },
-          { label: "АПК",         icon: "Wheat"     },
-          { label: "Строительство", icon: "Building2" },
-          { label: "Безопасность", icon: "Shield"   },
-          { label: "Логистика",   icon: "Package"   },
-        ].map(item => (
-          <span key={item.label} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
-            style={{
-              background: "rgba(0,212,255,0.07)",
-              border: "1px solid rgba(0,212,255,0.18)",
-              color: "var(--electric)",
-            }}>
-            <Icon name={item.icon} fallback="Check" size={11} />
-            {item.label}
-          </span>
-        ))}
-      </div>
 
       <p className="text-center text-xs mb-10 fade-up"
         style={{ color: "hsl(var(--muted-foreground))", opacity: 0.5 }}>

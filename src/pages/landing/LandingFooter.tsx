@@ -102,7 +102,6 @@ export default function LandingFooter({ onNavigate }: LandingFooterProps) {
                   { label: "Командный центр", page: "dashboard" },
                   { label: "Конструктор БПЛА", page: "dronebuilder" },
                   { label: "Тарифы", anchor: "#pricing" },
-                  { label: "Документация", anchor: "#" },
                 ].map((link) => (
                   <li key={link.label}>
                     {link.page ? (
@@ -154,9 +153,7 @@ export default function LandingFooter({ onNavigate }: LandingFooterProps) {
               <ul className="space-y-2.5">
                 {[
                   { label: "Соответствие 152-ФЗ", anchor: "/?privacy=1" },
-                  { label: "Воздушный кодекс РФ", anchor: "#" },
                   { label: "Политика конфиденциальности", anchor: "/?privacy=1" },
-                  { label: "Условия использования", anchor: "#" },
                 ].map((link) => (
                   <li key={link.label}>
                     <a href={link.anchor}
