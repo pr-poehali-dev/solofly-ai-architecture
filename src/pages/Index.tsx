@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthPage from "./AuthPage";
@@ -39,40 +39,35 @@ export default function Index() {
   const navigate = (p: string) => setPage(p as Page);
   const isLanding = page === "landing";
 
-  // Обработка callback от Яндекс (?code=...)
-  const handleYandexCallback = useCallback(async () => {
+  // Обработка callback от Яндекс (?code=...) — только один раз при монтировании
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
     if (!code) return;
 
     setYandexProcessing(true);
-    try {
-      const res = await fetch(
-        `https://functions.poehali.dev/10cbe5fa-e5d6-47d9-8b16-0520118ce11e?action=callback`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code }),
-        }
-      );
-      const data = await res.json();
-      if (res.ok && data.access_token) {
-        localStorage.setItem("sf_token", data.access_token);
-        window.history.replaceState({}, "", "/");
-        await refreshUser();
-        setPage("dashboard");
-      }
-    } finally {
-      setYandexProcessing(false);
-    }
-  }, [refreshUser]);
+    window.history.replaceState({}, "", "/");
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("code")) {
-      handleYandexCallback();
-    }
-  }, [handleYandexCallback]);
+    fetch(
+      `https://functions.poehali.dev/10cbe5fa-e5d6-47d9-8b16-0520118ce11e?action=callback`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      }
+    )
+      .then(res => res.json())
+      .then(data => {
+        if (data.access_token) {
+          localStorage.setItem("sf_token", data.access_token);
+          // Перезагружаем страницу — AuthContext подхватит токен из localStorage
+          window.location.replace("/");
+        } else {
+          setYandexProcessing(false);
+        }
+      })
+      .catch(() => setYandexProcessing(false));
+  }, []);  
 
   // Если вернулся с оплаты (?paid=1) — обновляем сессию
   useEffect(() => {
