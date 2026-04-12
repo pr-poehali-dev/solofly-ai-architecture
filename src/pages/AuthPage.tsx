@@ -2,7 +2,6 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/contexts/AuthContext";
 import { YandexLoginButton } from "@/components/extensions/yandex-auth/YandexLoginButton";
-import { useYandexAuth } from "@/components/extensions/yandex-auth/useYandexAuth";
 
 const YANDEX_AUTH_URL = "https://functions.poehali.dev/10cbe5fa-e5d6-47d9-8b16-0520118ce11e";
 
@@ -20,14 +19,21 @@ export default function AuthPage({ onSuccess }: AuthPageProps) {
   const [loading, setLoad]  = useState(false);
   const [error, setError]   = useState<string | null>(null);
 
-  const yandexAuth = useYandexAuth({
-    apiUrls: {
-      authUrl: `${YANDEX_AUTH_URL}?action=auth-url`,
-      callback: `${YANDEX_AUTH_URL}?action=callback`,
-      refresh: `${YANDEX_AUTH_URL}?action=refresh`,
-      logout: `${YANDEX_AUTH_URL}?action=logout`,
-    },
-  });
+  const [yandexLoading, setYandexLoading] = useState(false);
+
+  const loginWithYandex = async () => {
+    setYandexLoading(true);
+    try {
+      const res = await fetch(`${YANDEX_AUTH_URL}?action=auth-url`);
+      const data = await res.json();
+      if (data.auth_url) {
+        if (data.state) sessionStorage.setItem("yandex_auth_state", data.state);
+        window.location.href = data.auth_url;
+      }
+    } catch {
+      setYandexLoading(false);
+    }
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -192,8 +198,8 @@ export default function AuthPage({ onSuccess }: AuthPageProps) {
           </div>
 
           <YandexLoginButton
-            onClick={yandexAuth.login}
-            isLoading={yandexAuth.isLoading}
+            onClick={loginWithYandex}
+            isLoading={yandexLoading}
             className="w-full"
           />
         </form>
