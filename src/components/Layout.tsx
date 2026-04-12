@@ -71,6 +71,7 @@ export default function Layout({ currentPage, onNavigate, children, isLanding }:
 
   const handleLogout = async () => {
     await logout();
+    onNavigate("landing");
   };
 
   if (isLanding) {
