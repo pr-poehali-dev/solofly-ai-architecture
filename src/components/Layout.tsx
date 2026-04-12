@@ -95,7 +95,10 @@ export default function Layout({ currentPage, onNavigate, children, isLanding }:
               ].map(item => (
                 <button
                   key={item.anchor}
-                  onClick={() => document.getElementById(item.anchor)?.scrollIntoView({ behavior: "smooth" })}
+                  onClick={() => {
+                    const el = document.getElementById(item.anchor);
+                    if (el) window.scrollTo({ top: el.offsetTop - 56, behavior: "smooth" });
+                  }}
                   className="btn-ghost px-3 py-2 rounded-lg text-xs hidden md:flex"
                 >
                   {item.label}
