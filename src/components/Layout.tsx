@@ -139,9 +139,9 @@ export default function Layout({ currentPage, onNavigate, children, isLanding }:
             <div className="flex items-center gap-1.5">
               <div className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold"
                 style={{ background: user.avatar_color, color: "hsl(210 25% 4%)" }}>
-                {user.name.charAt(0).toUpperCase() || "?"}
+                {(user.name || user.email || "?").charAt(0).toUpperCase()}
               </div>
-              <span className="text-xs text-muted-foreground">{user.name.split(" ")[0]}</span>
+              <span className="text-xs text-muted-foreground">{(user.name || user.email || "").split(" ")[0]}</span>
             </div>
           )}
         </header>
@@ -252,10 +252,10 @@ export default function Layout({ currentPage, onNavigate, children, isLanding }:
             >
               <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 font-bold text-xs"
                 style={{ background: user.avatar_color, color: "hsl(210 25% 4%)" }}>
-                {user.name.charAt(0).toUpperCase() || "?"}
+                {(user.name || user.email || "?").charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <div className="text-xs font-semibold truncate">{user.name}</div>
+                <div className="text-xs font-semibold truncate">{user.name || user.email || "Пользователь"}</div>
                 <div className="hud-label truncate" style={{ color: "var(--electric)", fontSize: 9 }}>
                   Редактировать профиль →
                 </div>

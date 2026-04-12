@@ -5,9 +5,10 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface PaywallPageProps {
   onSuccess?: () => void;
+  showCurrentPlan?: boolean;
 }
 
-export default function PaywallPage({ onSuccess }: PaywallPageProps) {
+export default function PaywallPage({ onSuccess, showCurrentPlan }: PaywallPageProps) {
   const { user } = useAuth();
   const [plans, setPlans]         = useState<Plan[]>([]);
   const [period, setPeriod]       = useState<"month" | "year">("month");
