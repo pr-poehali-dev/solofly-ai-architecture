@@ -107,7 +107,7 @@ export default function LandingGrant() {
       </div>
 
       {/* Команда */}
-      <div id="team">
+      <div>
         <div className="flex items-center gap-2 mb-5">
           <div className="tag tag-electric">Команда проекта</div>
         </div>
