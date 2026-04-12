@@ -1,7 +1,8 @@
-import LandingTabs    from "./LandingTabs";
-import LandingReviews from "./LandingReviews";
-import LandingInfo    from "./LandingInfo";
-import LandingFooter  from "./LandingFooter";
+import LandingTabs       from "./LandingTabs";
+import LandingIndustries from "./LandingIndustries";
+import LandingReviews    from "./LandingReviews";
+import LandingInfo       from "./LandingInfo";
+import LandingFooter     from "./LandingFooter";
 
 interface LandingSocialProps {
   onNavigate: (p: string) => void;
@@ -10,11 +11,13 @@ interface LandingSocialProps {
 export default function LandingSocial({ onNavigate }: LandingSocialProps) {
   return (
     <>
-      {/* 4 таба: Отрасли / Технологии / Конкурс / Тарифы — раскрываются по клику */}
+      {/* Отраслевые кейсы — всегда видны */}
+      <LandingIndustries onNavigate={onNavigate} />
+      {/* Возможности / Тарифы — раскрываются по клику */}
       <LandingTabs onNavigate={onNavigate} />
-      {/* Отзывы + trust-сигналы + FAQ — всегда видны */}
+      {/* Отзывы + trust-сигналы + FAQ */}
       <LandingReviews />
-      {/* НИОКР + О проекте + Технология — всегда видны */}
+      {/* НИОКР + О проекте + Технология + Команда */}
       <LandingInfo />
       {/* CTA + Footer */}
       <LandingFooter onNavigate={onNavigate} />

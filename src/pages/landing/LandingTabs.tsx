@@ -1,21 +1,11 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
-import LandingIndustries from "./LandingIndustries";
 import LandingBento      from "./LandingBento";
 import LandingGrant      from "./LandingGrant";
 import LandingOnboarding from "./LandingOnboarding";
 import LandingPricing    from "./LandingPricing";
 
 const TABS = [
-  {
-    id: "industries",
-    icon: "Factory",
-    label: "Отрасли",
-    sub: "Задачи и результаты",
-    color: "var(--electric)",
-    accent: "rgba(0,212,255,0.08)",
-    border: "rgba(0,212,255,0.25)",
-  },
   {
     id: "tech",
     icon: "Cpu",
@@ -47,7 +37,7 @@ export default function LandingTabs({ onNavigate }: Props) {
 
   return (
     <section className="px-6 py-10 max-w-6xl mx-auto">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
         {TABS.map(tab => {
           const isOpen = active === tab.id;
           return (
@@ -109,7 +99,6 @@ export default function LandingTabs({ onNavigate }: Props) {
           </div>
 
           <div className="px-4 py-6 md:px-6">
-            {active === "industries" && <LandingIndustries onNavigate={onNavigate} />}
             {active === "tech" && <LandingBento />}
             {active === "pricing" && (
               <div className="space-y-4">
