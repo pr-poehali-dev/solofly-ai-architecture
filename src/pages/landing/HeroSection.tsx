@@ -36,16 +36,15 @@ export default function HeroSection({ onNavigate, onOpenDemo }: HeroSectionProps
           fontSize: "clamp(3rem, 7vw, 5.5rem)", fontWeight: 900,
           lineHeight: 1.05, letterSpacing: "-0.035em",
         }}>
-          <span className="gradient-text">Замените 3 оператора</span>
+          <span className="gradient-text">SoloFly — экспериментальная система</span>
           <br />
-          <span style={{ color: "hsl(var(--foreground))" }}>одной платформой</span>
+          <span style={{ color: "hsl(var(--foreground))" }}>автономного управления БПЛА на базе ИИ</span>
         </h1>
       </div>
 
       <p className="text-center max-w-2xl mx-auto mb-4 leading-relaxed fade-up"
         style={{ fontSize: "clamp(1rem, 2vw, 1.15rem)", color: "hsl(var(--muted-foreground))" }}>
-        SoloFly автоматизирует инспекцию, мониторинг и картографирование для нефтегаза,
-        энергетики, АПК, строительства и охраны. До 85% полётов — без участия человека.
+        Разработка алгоритмов адаптивной навигации и автономного принятия решений для промышленного применения.
       </p>
 
       {/* Industry quick-links */}
